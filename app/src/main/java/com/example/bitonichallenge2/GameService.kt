@@ -33,12 +33,15 @@ class GameService: LifecycleService() {
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
     // why we need Foreground Service
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("GameService","${isFirstGame}")
 
         intent?.let {
 
             when(it.action){
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
+                        Log.d("GameService","Starrr Service")
+
                         startForegroundService()
                     }else{
                         Log.d("GameService","Resuming Service")

@@ -33,7 +33,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+
         btnSendCommand.setOnClickListener {
+
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
 

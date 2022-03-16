@@ -14,9 +14,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/mpitoni"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/mpitoni"
         android:supportsRtl="true"
         android:theme="@style/Theme.BitoniChallenge2">
 
@@ -46,6 +46,7 @@
         <meta-data
             android:name="com.google.android.gms.version"/>
 
+        <service android:name=".GameService" android:foregroundServiceType="location"/>
     </application>
 
 </manifest>
