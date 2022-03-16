@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import com.example.bitonichallenge2.model.ACTION_SHOW_MAPS_ACTIVITY
 import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
 import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
 import com.example.bitonichallenge2.model.Utils
@@ -14,6 +12,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
@@ -35,20 +34,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
         btnSendCommand.setOnClickListener {
-
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
 
-        if(intent.action == ACTION_SHOW_MAPS_ACTIVITY){
-            Log.d("GameService","Mpike apo notification")
-        }
 
+        subscribeToObservers()
 
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        Log.d("GameService", "New Intent!")
+
+    private fun subscribeToObservers(){
+        GameService.isGameOngoing.observe(this,{
+
+        })
+        GameService.coordinatesUser.observe(this,{
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it,15f))
+            mMap.addMarker(MarkerOptions().position(it).title("Marker in Sydney").icon(BitmapDescriptorFactory.fromResource(R.drawable.adonis1)))
+        })
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -56,7 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         // Add a marker in Sydney and move the camera
         val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
+
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 

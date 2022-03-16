@@ -22,7 +22,7 @@ class GameService: LifecycleService() {
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
-        var coordinates = MutableLiveData<LatLng>()
+        var coordinatesUser = MutableLiveData<LatLng>()
     }
 
     override fun onCreate() {
@@ -36,7 +36,7 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
         isGameOngoing.postValue(false)
-        coordinates.postValue(LatLng(0.0,0.0))
+        coordinatesUser.postValue(LatLng(0.0,0.0))
     }
 
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
@@ -50,7 +50,6 @@ class GameService: LifecycleService() {
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
                         Log.d("GameService","Starrr Service")
-
                         startForegroundService()
                     }else{
                         Log.d("GameService","Resuming Service")
@@ -90,7 +89,7 @@ class GameService: LifecycleService() {
             super.onLocationResult(locationResult)
             Log.d("GameService","Lat:${locationResult.lastLocation.latitude} Lon:${locationResult.lastLocation.longitude}")
             if(isGameOngoing.value!!){
-                coordinates.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
+                coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
         }
 
@@ -116,6 +115,7 @@ class GameService: LifecycleService() {
             .setContentIntent(getMapsActivityPendingIntent())
 
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
+
 
     }
 
