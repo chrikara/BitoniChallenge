@@ -31,12 +31,12 @@
             tools:layout_editor_absoluteY="107dp" />
 
         <Button
-            android:id="@+id/btnStopGame"
+            android:id="@+id/btnGoToUser"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="Button"
+            android:text="Go To user"
             tools:layout_editor_absoluteX="261dp"
             tools:layout_editor_absoluteY="111dp" />
 
@@ -70,7 +70,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:text="Send Data"
+            android:text="Start"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 

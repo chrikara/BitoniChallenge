@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.example.bitonichallenge2.model.*
 import com.google.android.gms.location.*
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
@@ -27,15 +28,15 @@ class GameService: LifecycleService() {
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
         var coordinatesInitialFuel = MutableLiveData<MutableList<Fuel>>()
-        var isServiceKilled = false
     }
 
     override fun onCreate() {
         super.onCreate()
-        println("mpike")
 
-        isServiceKilled = false
+        Log.d("MapsActivity1" ,"Created!")
+
         postInitialValues()
+
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
         isGameOngoing.observe(this,{
@@ -44,17 +45,14 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
 
-        Log.d("MapsActivity" ,"Service is killed? $isServiceKilled")
-        if(!isServiceKilled){
             coordinatesInitialFuel.postValue(Utils.addRandomCoordsToAnEmptyList(Utils.fuelRandomCoordinatesList))
             isGameOngoing.postValue(false)
-            coordinatesUser.postValue(XANTHI_KENTRO)
-        }
+
 
     }
 
     private fun killService(){
-        isServiceKilled = true
+
         isFirstGame = true
         isGameOngoing.postValue(false)
         coordinatesUser.postValue(coordinatesUser.value)
@@ -71,7 +69,6 @@ class GameService: LifecycleService() {
             when(it.action){
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
-
                         startForegroundService()
                     }else{
                         startForegroundService()
@@ -121,8 +118,8 @@ class GameService: LifecycleService() {
         if(isGame){
             if(Utils.hasPermissions(this)){
                 val request = LocationRequest.create().apply {
-                    interval = 5000L
-                    fastestInterval = 2000L
+                    interval = 1000L
+                    fastestInterval = 300L
                     priority = LocationRequest.PRIORITY_HIGH_ACCURACY
                 }
                 fusedLocationProviderClient.requestLocationUpdates(
@@ -135,11 +132,18 @@ class GameService: LifecycleService() {
             fusedLocationProviderClient.removeLocationUpdates(lastLocation)
         }
     }
+    var count = 0
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
+
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
+            }
+
+            if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
+                MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!,18f))
+                MapsActivity.isGameJustStarted = false
             }
         }
     }

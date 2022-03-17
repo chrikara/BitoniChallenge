@@ -30,13 +30,17 @@ import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
 
-    private lateinit var mMap: GoogleMap
     private lateinit var fuelsOnMap: MutableList<Fuel>
-    var isGameOngoing : Boolean = false
     var isDistanceClose : Boolean = false
 
     var fuelToCatchIndex : Int = -1
     var userMarker : Marker? = null
+
+    companion object{
+        var isGameJustStarted = false
+        lateinit var mMap: GoogleMap
+
+    }
 
     private var menu: Menu? = null
 
@@ -58,6 +62,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
             btnPauseGame.visibility = View.VISIBLE
 
+            if(!isGameJustStarted && btnSendCommand.text == "Start") {
+                isGameJustStarted=true
+                btnSendCommand.text = "Resume"
+            }
+
+        }
+
+        btnGoToUser.setOnClickListener{
+            try{
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!,18f))
+            }catch (e:Exception){}
         }
 
 
@@ -169,7 +184,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     }
 
     private fun updateUserMarker(latLng: LatLng){
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18f))
         userMarker?.remove()
         userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("It's me").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
     }
@@ -249,13 +263,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 .setTitle("Cancel Game")
                 .setMessage("Do you want to cancel this game?")
                 .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
-
                     sendCommandToService(ACTION_STOP_SERVICE)
                     btnSendCommand.visibility = View.VISIBLE
+                    btnCatch.visibility = View.INVISIBLE
                     btnPauseGame.visibility = View.INVISIBLE
+                    menu?.getItem(0)?.isVisible = false
+
+                    btnSendCommand.text = "Start"
+
                     isDistanceClose = false
                     fuelsOnMap.clear()
-                    GameService.coordinatesInitialFuel.value = mutableListOf(Fuel(XANTHI_KENTRO,15))
                     mMap.clear()
                 }
                 .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
