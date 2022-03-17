@@ -10,12 +10,15 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.AdapterView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.example.bitonichallenge2.model.*
-import com.google.android.gms.location.FusedLocationProviderClient
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMap.MAP_TYPE_NORMAL
+import com.google.android.gms.maps.GoogleMap.MAP_TYPE_TERRAIN
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
@@ -31,6 +34,7 @@ import java.lang.Exception
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
 
     private lateinit var fuelsOnMap: MutableList<Fuel>
+    private lateinit var mapFragment: SupportMapFragment
     var isDistanceClose : Boolean = false
 
     var fuelToCatchIndex : Int = -1
@@ -39,34 +43,60 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     companion object{
         var isGameJustStarted = false
         lateinit var mMap: GoogleMap
-
     }
 
     private var menu: Menu? = null
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         requestPermissions()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
+        mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
 
         fuelsOnMap = mutableListOf()
 
         btnSendCommand.setOnClickListener {
             menu!!.getItem(0)!!.isVisible = true
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
-            it.visibility = View.GONE
+            mapFragment.alpha(1f)
 
+            it.visibility = View.GONE
+            spMapStyles.visibility = View.INVISIBLE
             btnPauseGame.visibility = View.VISIBLE
+
+            mapFragment.alpha(1f)
+            mMap.uiSettings.setAllGesturesEnabled(true)
+
 
             if(!isGameJustStarted && btnSendCommand.text == "Start") {
                 isGameJustStarted=true
                 btnSendCommand.text = "Resume"
             }
 
+        }
+
+
+        spMapStyles.apply {
+            onItemSelectedListener = object : AdapterView.OnItemClickListener, AdapterView.OnItemSelectedListener {
+                override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {}
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    when (position){
+                        0 -> { mMap.setMapStyle(null)}
+                        1 -> {setCustomMapStyle(R.raw.map_style_midnight)}
+                        2 -> {setCustomMapStyle(R.raw.map_style_dark)}
+                    }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+
+            }
         }
 
         btnGoToUser.setOnClickListener{
@@ -77,11 +107,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
         btnPauseGame.setOnClickListener{
+            mapFragment.alpha(0.6f)
+            mMap.uiSettings.setAllGesturesEnabled(false)
+
             sendCommandToService(ACTION_PAUSE_SERVICE)
             it.visibility = View.GONE
             btnSendCommand.visibility = View.VISIBLE
             btnCatch.visibility = View.INVISIBLE
-
         }
 
         btnCatch.setOnClickListener{
@@ -189,13 +221,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     }
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this,R.raw.map_style))
-
-
-
-
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(XANTHI_KENTRO,15f))
+    }
+
+    private fun setCustomMapStyle(mapStyle:Int) {
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this,mapStyle))
     }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
@@ -268,9 +298,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
                     sendCommandToService(ACTION_STOP_SERVICE)
                     btnSendCommand.visibility = View.VISIBLE
+                    spMapStyles.visibility = View.VISIBLE
                     btnCatch.visibility = View.INVISIBLE
-                    btnPauseGame.visibility = View.INVISIBLE
+                    btnPauseGame.visibility = View.GONE
                     menu?.getItem(0)?.isVisible = false
+
+                    mapFragment.alpha(1f)
+                    mMap.uiSettings.setAllGesturesEnabled(true)
+
+
 
                     btnSendCommand.text = "Start"
 
@@ -281,5 +317,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
                 .create()
         dialog.show()
+    }
+
+    private fun SupportMapFragment.alpha(alpha : Float){
+        this.view?.alpha = alpha
     }
 }

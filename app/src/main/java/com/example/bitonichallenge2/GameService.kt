@@ -118,8 +118,8 @@ class GameService: LifecycleService() {
         if(isGame){
             if(Utils.hasPermissions(this)){
                 val request = LocationRequest.create().apply {
-                    interval = 1000L
-                    fastestInterval = 300L
+                    interval = 400L
+                    fastestInterval = 100L
                     priority = LocationRequest.PRIORITY_HIGH_ACCURACY
                 }
                 fusedLocationProviderClient.requestLocationUpdates(
@@ -137,10 +137,12 @@ class GameService: LifecycleService() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
+
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
 
+            Log.d("GameService", "isGameJust ${MapsActivity.isGameJustStarted} coords ${coordinatesUser.value}")
             if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
                 MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!,18f))
                 MapsActivity.isGameJustStarted = false
