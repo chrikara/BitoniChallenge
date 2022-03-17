@@ -25,7 +25,7 @@ class GameService: LifecycleService() {
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
-        var coordinatesInitialFuel = MutableLiveData<MutableList<LatLng>>()
+        var coordinatesInitialFuel = MutableLiveData<MutableList<Fuel>>()
     }
 
     override fun onCreate() {

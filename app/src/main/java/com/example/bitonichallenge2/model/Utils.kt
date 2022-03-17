@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
@@ -27,11 +28,11 @@ object Utils {
             )
         }
 
-    var fuelRandomCoordinatesList = mutableListOf(
-        LatLng(41.1438, 24.9001),
-        LatLng(41.1445, 24.8988),
-        LatLng(41.1439, 24.8979),
-        LatLng(41.1434, 24.8988),
+    var fuelRandomCoordinatesList = mutableListOf<Fuel>(
+        Fuel(LatLng(41.1438, 24.9001),10),
+        Fuel(LatLng(41.1445, 24.8988),15),
+        Fuel(LatLng(41.1439, 24.8979),20),
+        Fuel(LatLng(41.1434, 24.8988),25),
     )
     fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
         return ContextCompat.getDrawable(context, vectorResId)?.run {
@@ -41,6 +42,7 @@ object Utils {
             BitmapDescriptorFactory.fromBitmap(bitmap)
         }
     }
+
 
 
 }
