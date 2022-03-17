@@ -60,10 +60,7 @@ class GameService: LifecycleService() {
                 ACTION_PAUSE_SERVICE -> {
                     Log.d("GameService","Paused")}
                 ACTION_STOP_SERVICE -> {
-                    coordinatesFuel.value?.apply {
-                        add(LatLng(41.1440, 24.8990))
-                        coordinatesFuel.postValue(this)
-                    }
+
                 }
 
                 else -> Log.d("GameService","Nothing")

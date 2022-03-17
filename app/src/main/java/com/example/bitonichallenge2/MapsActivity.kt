@@ -1,11 +1,10 @@
 package com.example.bitonichallenge2
 
 import android.content.Intent
+import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import androidx.recyclerview.widget.AsyncListDiffer
 import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
 import com.example.bitonichallenge2.model.ACTION_STOP_SERVICE
 import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
@@ -17,6 +16,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -27,6 +27,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private lateinit var mMap: GoogleMap
     private lateinit var fuelCoordinates: MutableList<LatLng>
     var isGameOngoing : Boolean = false
+    var a : String? = null
+
+    var userMarker : Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +44,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         btnSendCommand.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+            userMarker = mMap.addMarker(MarkerOptions().position(LatLng(0.0,0.0)).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+
         }
 
 
@@ -57,17 +62,30 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         GameService.isGameOngoing.observe(this,{
         })
         GameService.coordinatesUser.observe(this,{
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it,18f))
-            mMap.addMarker(MarkerOptions().position(it).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+            updateUserMarker(it)
+            val location = Location("user").apply {
+                latitude = it.latitude
+                longitude = it.longitude
+            }
+            for(coords in fuelCoordinates){
+                println("Distance is ${distanceFromMarkers(location,coords)}")
+            }
         })
         GameService.coordinatesFuel.observe(this,{
             fuelCoordinates=it
-            for (fuel in it){
-                mMap.addMarker(MarkerOptions().position(fuel).title("Marker in Sydney"))
-            }
-            Log.d("MapsActivity","${GameService.coordinatesFuel.value}")
+            markerListFromLatLngList(mMap,it)
 
         })
+    }
+    private fun markerListFromLatLngList(mMap:GoogleMap,mutableListLatLng: MutableList<LatLng>) : MutableList<Marker>{
+        val markersList = mutableListOf<Marker>()
+
+        for (latlng in mutableListLatLng){
+            mMap.addMarker(MarkerOptions().position(latlng).title("Marker in Sydney"))?.let {
+                markersList.add(it)
+            }
+        }
+        return markersList
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -80,6 +98,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
+    private fun distanceFromMarkers(location1 : Location,latLng: LatLng) : Float{
+       return location1.distanceTo(Location("coor").apply {
+            latitude = latLng.latitude
+            longitude = latLng.longitude
+        })
+    }
+
+    private fun updateUserMarker(latLng: LatLng){
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18f))
+        userMarker?.remove()
+        userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+    }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
             it.action = action
