@@ -19,10 +19,13 @@ import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
     var isFirstGame = true
+
+
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
+        var coordinatesFuel = MutableLiveData<MutableList<LatLng>>()
     }
 
     override fun onCreate() {
@@ -42,7 +45,6 @@ class GameService: LifecycleService() {
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
     // why we need Foreground Service
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("GameService","${isFirstGame}")
 
         intent?.let {
 
@@ -58,12 +60,40 @@ class GameService: LifecycleService() {
                 ACTION_PAUSE_SERVICE -> {
                     Log.d("GameService","Paused")}
                 ACTION_STOP_SERVICE -> {
-                    Log.d("GameService","Stopped")}
+                    coordinatesFuel.value?.apply {
+                        add(LatLng(41.1440, 24.8990))
+                        coordinatesFuel.postValue(this)
+                    }
+                }
 
                 else -> Log.d("GameService","Nothing")
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+    private fun startForegroundService(){
+        isGameOngoing.postValue(true)
+
+        coordinatesFuel.postValue(Utils.fuelRandomCoordinatesList)
+
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            createNotificationChannel(notificationManager)
+        }
+
+        val notificationBuilder= NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setAutoCancel(false) // User can't cancel notification
+            .setOngoing(true) // User can't swipe away notification
+            .setSmallIcon(R.drawable.ic_baseline_directions_run_24)
+            .setContentTitle("Game ongoing")
+            .setContentText("00:00:00")
+            .setContentIntent(getMapsActivityPendingIntent())
+
+        startForeground(NOTIFICATION_ID, notificationBuilder.build())
+
+
     }
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){
@@ -98,26 +128,7 @@ class GameService: LifecycleService() {
         }
     }
 
-    private fun startForegroundService(){
-        isGameOngoing.postValue(true)
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            createNotificationChannel(notificationManager)
-        }
-
-        val notificationBuilder= NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false) // User can't cancel notification
-            .setOngoing(true) // User can't swipe away notification
-            .setSmallIcon(R.drawable.ic_baseline_directions_run_24)
-            .setContentTitle("Game ongoing")
-            .setContentText("00:00:00")
-            .setContentIntent(getMapsActivityPendingIntent())
-
-        startForeground(NOTIFICATION_ID, notificationBuilder.build())
-
-
-    }
 
     private fun getMapsActivityPendingIntent() = PendingIntent.getActivity(
         this,

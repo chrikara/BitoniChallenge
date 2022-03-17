@@ -4,7 +4,10 @@ import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import androidx.recyclerview.widget.AsyncListDiffer
 import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
+import com.example.bitonichallenge2.model.ACTION_STOP_SERVICE
 import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
 import com.example.bitonichallenge2.model.Utils
 
@@ -22,6 +25,8 @@ import pub.devrel.easypermissions.EasyPermissions
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
 
     private lateinit var mMap: GoogleMap
+    private lateinit var fuelCoordinates: MutableList<LatLng>
+    var isGameOngoing : Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,12 +37,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        fuelCoordinates = mutableListOf()
 
         btnSendCommand.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
 
 
+        btnStopGame.setOnClickListener{
+            sendCommandToService(ACTION_STOP_SERVICE)
+
+        }
         subscribeToObservers()
 
     }
@@ -45,16 +55,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun subscribeToObservers(){
         GameService.isGameOngoing.observe(this,{
-
         })
         GameService.coordinatesUser.observe(this,{
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it,15f))
-            mMap.addMarker(MarkerOptions().position(it).title("Marker in Sydney").icon(BitmapDescriptorFactory.fromResource(R.drawable.adonis1)))
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it,18f))
+            mMap.addMarker(MarkerOptions().position(it).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+        })
+        GameService.coordinatesFuel.observe(this,{
+            fuelCoordinates=it
+            for (fuel in it){
+                mMap.addMarker(MarkerOptions().position(fuel).title("Marker in Sydney"))
+            }
+            Log.d("MapsActivity","${GameService.coordinatesFuel.value}")
+
         })
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+
 
         // Add a marker in Sydney and move the camera
         val sydney = LatLng(-34.0, 151.0)
