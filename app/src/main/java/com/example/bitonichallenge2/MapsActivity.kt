@@ -190,6 +190,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this,R.raw.map_style))
+
+
 
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(XANTHI_KENTRO,15f))
