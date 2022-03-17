@@ -54,9 +54,12 @@ class GameService: LifecycleService() {
 
                         startForegroundService()
                     }else{
+                        startForegroundService()
                     }
                 }
-                ACTION_PAUSE_SERVICE -> { }
+                ACTION_PAUSE_SERVICE -> {
+                    pauseService()
+                }
                 ACTION_STOP_SERVICE -> {
 
                 }
@@ -89,6 +92,10 @@ class GameService: LifecycleService() {
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
 
 
+    }
+
+    private fun pauseService(){
+        isGameOngoing.postValue(false)
     }
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){

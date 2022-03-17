@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.example.bitonichallenge2.model.*
+import com.google.android.gms.location.FusedLocationProviderClient
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -46,13 +47,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         btnSendCommand.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
-            userMarker = mMap.addMarker(MarkerOptions().position(LatLng(0.0,0.0)).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+            it.visibility = View.GONE
 
         }
 
 
-        btnStopGame.setOnClickListener{
-            sendCommandToService(ACTION_STOP_SERVICE)
+        btnPauseGame.setOnClickListener{
+            sendCommandToService(ACTION_PAUSE_SERVICE)
+            btnSendCommand.visibility = View.VISIBLE
         }
 
         btnCatch.setOnClickListener{
@@ -118,7 +120,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         GameService.coordinatesInitialFuel.observe(this,{
             fuelsOnMap=it
             markerListFromFuelList(mMap,it)
-
         })
     }
 
@@ -152,16 +153,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private fun updateUserMarker(latLng: LatLng){
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18f))
         userMarker?.remove()
-        userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+        userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("It's me").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
     }
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(XANTHI_KENTRO,15f))
     }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
@@ -193,11 +192,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode,permissions,grantResults,this)
     }
