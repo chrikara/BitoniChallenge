@@ -70,7 +70,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
             CoroutineScope(Dispatchers.Default).launch{
                 for(i in fuelCoordinates.indices){
-                    if (distanceFromUserAndMarker(currentLocation, fuelCoordinates[i]) < DISTANCE_TO_CATCH_FUEL){
+                    if (distanceFromUserAndMarker(currentLocation, fuelCoordinates[i]) < MAX_DISTANCE_TO_CATCH_FUEL){
                         CoroutineScope(Dispatchers.Main).launch { deleteMarkerFromListAndUpdateMap(i,it) }
                         break
                     }
