@@ -28,6 +28,17 @@ object Utils {
             )
         }
 
+
+
+
+    fun addRandomCoordsToAnEmptyList(fuelRandomCoords : MutableList<Fuel>) : MutableList<Fuel>{
+        val newList = mutableListOf<Fuel>()
+        for (fuel in fuelRandomCoords){
+            newList.add(fuel)
+        }
+        return newList
+
+    }
     var fuelRandomCoordinatesList = mutableListOf<Fuel>(
         Fuel(LatLng(41.1438, 24.9001),10),
         Fuel(LatLng(41.1445, 24.8988),15),

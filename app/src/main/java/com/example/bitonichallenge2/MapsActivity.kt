@@ -1,11 +1,14 @@
 package com.example.bitonichallenge2
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.bitonichallenge2.model.*
@@ -16,6 +19,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +38,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     var fuelToCatchIndex : Int = -1
     var userMarker : Marker? = null
 
+    private var menu: Menu? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
@@ -46,15 +52,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         fuelsOnMap = mutableListOf()
 
         btnSendCommand.setOnClickListener {
+            menu!!.getItem(0)!!.isVisible = true
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
             it.visibility = View.GONE
+            btnPauseGame.visibility = View.VISIBLE
 
         }
 
 
         btnPauseGame.setOnClickListener{
             sendCommandToService(ACTION_PAUSE_SERVICE)
+            it.visibility = View.GONE
             btnSendCommand.visibility = View.VISIBLE
+            btnCatch.visibility = View.INVISIBLE
+
         }
 
         btnCatch.setOnClickListener{
@@ -84,8 +95,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             // maybe it's too much for the main thread
 
             CoroutineScope(Dispatchers.Default).launch{
+                Log.d("MapsFor", "$isDistanceClose")
                 if(!isDistanceClose){
                 for(i in fuelsOnMap.indices){
+
+
 
                     // Prompts user to catch fuel while he is close
                     if (distanceFromUserAndMarker(currentLocation, fuelsOnMap[i].coordinates) < MAX_DISTANCE_TO_CATCH_FUEL ){
@@ -99,15 +113,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     }
                 }
                 } else{
-                    Log.d("MapsActivity","Einai konta ${fuelToCatchIndex}!")
                     if(distanceFromUserAndMarker(currentLocation,fuelsOnMap[fuelToCatchIndex].coordinates)> MAX_DISTANCE_TO_CATCH_FUEL){
-                        Log.d("MapsActivity","Efuge ${fuelToCatchIndex}")
 
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.visibility = View.INVISIBLE
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
+                    }else if(fuelToCatchIndex!=-1){
+                        CoroutineScope(Dispatchers.Main).launch{btnCatch.visibility = View.VISIBLE}
                     }
                 }
             }
@@ -118,6 +132,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         })
         GameService.coordinatesInitialFuel.observe(this,{
+
             fuelsOnMap=it
             markerListFromFuelList(mMap,it)
         })
@@ -166,6 +181,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         Intent(this, GameService::class.java).also {
             it.action = action
             this.startService(it)
+
         }
     }
     private fun requestPermissions(){
@@ -212,4 +228,35 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_maps_activity,menu)
+        this.menu = menu
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId){
+            R.id.miCancelGame->{showCancelGameDialog()}
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun showCancelGameDialog(){
+        val dialog = MaterialAlertDialogBuilder(this)
+                .setTitle("Cancel Game")
+                .setMessage("Do you want to cancel this game?")
+                .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
+
+                    sendCommandToService(ACTION_STOP_SERVICE)
+                    btnSendCommand.visibility = View.VISIBLE
+                    btnPauseGame.visibility = View.INVISIBLE
+                    isDistanceClose = false
+                    fuelsOnMap.clear()
+                    GameService.coordinatesInitialFuel.value = mutableListOf(Fuel(XANTHI_KENTRO,15))
+                    mMap.clear()
+                }
+                .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
+                .create()
+        dialog.show()
+    }
 }

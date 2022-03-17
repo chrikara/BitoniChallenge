@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
     var isFirstGame = true
+    var isServiceKilled = false
 
 
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -30,6 +31,8 @@ class GameService: LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        println("mpike")
+
         postInitialValues()
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
@@ -38,8 +41,22 @@ class GameService: LifecycleService() {
         })
     }
     private fun postInitialValues(){
+
+        if(!isServiceKilled){
+            coordinatesInitialFuel.postValue(Utils.addRandomCoordsToAnEmptyList(Utils.fuelRandomCoordinatesList))
+            isGameOngoing.postValue(false)
+            coordinatesUser.postValue(XANTHI_KENTRO)
+        }
+
+    }
+
+    private fun killService(){
+        isServiceKilled = true
+        isFirstGame = true
         isGameOngoing.postValue(false)
-        coordinatesUser.postValue(LatLng(0.0,0.0))
+        coordinatesUser.postValue(coordinatesUser.value)
+        stopForeground(true) // Removes notification
+        stopSelf() // Removes whole service
     }
 
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
@@ -61,7 +78,7 @@ class GameService: LifecycleService() {
                     pauseService()
                 }
                 ACTION_STOP_SERVICE -> {
-
+                    killService()
                 }
 
                 else -> Log.d("GameService","Nothing")
@@ -72,7 +89,6 @@ class GameService: LifecycleService() {
     private fun startForegroundService(){
         isGameOngoing.postValue(true)
 
-        coordinatesInitialFuel.postValue(Utils.fuelRandomCoordinatesList)
 
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -122,10 +138,6 @@ class GameService: LifecycleService() {
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
-        }
-
-        override fun onLocationAvailability(p0: LocationAvailability) {
-            super.onLocationAvailability(p0)
         }
     }
 

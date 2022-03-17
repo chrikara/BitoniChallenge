@@ -1,5 +1,6 @@
 package com.example.bitonichallenge2
 
+import androidx.lifecycle.MutableLiveData
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -12,6 +13,17 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+
+        val list1 = mutableListOf<Int>(1,2,3)
+        var list2 = mutableListOf<Int>()
+
+        for (i in list1){
+            list2.add(i)
+        }
+
+        list2.removeAt(0)
+
+        println("List1 ${list1} List2 $list2")
+
     }
 }
