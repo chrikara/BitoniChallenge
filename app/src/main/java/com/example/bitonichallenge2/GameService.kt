@@ -79,12 +79,12 @@ class GameService: LifecycleService() {
         }
 
         val notificationBuilder= NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false) // User can't cancel notification
-            .setOngoing(true) // User can't swipe away notification
-            .setSmallIcon(R.drawable.ic_baseline_directions_run_24)
-            .setContentTitle("Game ongoing")
-            .setContentText("00:00:00")
-            .setContentIntent(getMapsActivityPendingIntent())
+                .setAutoCancel(false) // User can't cancel notification
+                .setOngoing(true) // User can't swipe away notification
+                .setSmallIcon(R.drawable.ic_baseline_directions_run_24)
+                .setContentTitle("Game ongoing")
+                .setContentText("00:00:00")
+                .setContentIntent(getMapsActivityPendingIntent())
 
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
 

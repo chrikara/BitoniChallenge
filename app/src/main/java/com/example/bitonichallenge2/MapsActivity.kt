@@ -5,22 +5,17 @@ import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
-import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
-import com.example.bitonichallenge2.model.ACTION_STOP_SERVICE
-import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
-import com.example.bitonichallenge2.model.Utils
+import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
@@ -64,18 +59,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
-            val location = Location("user").apply {
+            val currentLocation = Location("user").apply {
                 latitude = it.latitude
                 longitude = it.longitude
             }
 
-            for(i in fuelCoordinates.indices){
-                if (distanceFromUserAndMarker(location,fuelCoordinates[i])<20f){
-                    Toast.makeText(this,"Το πήρα!",Toast.LENGTH_LONG).show()
-                    deleteMarkerFromListAndUpdateMap(i,it)
-                    break
+
+                // Should this for-loop be inside a coroutine scope? It's a long running calculation that will occur every interval
+            // maybe it's too much for the main thread
+
+            CoroutineScope(Dispatchers.Default).launch{
+                for(i in fuelCoordinates.indices){
+                    if (distanceFromUserAndMarker(currentLocation, fuelCoordinates[i]) < DISTANCE_TO_CATCH_FUEL){
+                        CoroutineScope(Dispatchers.Main).launch { deleteMarkerFromListAndUpdateMap(i,it) }
+                        break
+                    }
                 }
             }
+
+
+
+
+
         })
         GameService.coordinatesFuel.observe(this,{
             fuelCoordinates=it
@@ -95,7 +100,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         val markersList = mutableListOf<Marker>()
 
         for (latlng in mutableListLatLng){
-            mMap.addMarker(MarkerOptions().position(latlng).title("Marker in Sydney"))?.let {
+            mMap.addMarker(MarkerOptions().icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas)).position(latlng).title("Marker in Sydney"))?.let {
                 markersList.add(it)
             }
         }

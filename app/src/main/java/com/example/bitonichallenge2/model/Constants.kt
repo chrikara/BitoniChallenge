@@ -7,6 +7,8 @@ const val ACTION_PAUSE_SERVICE = "ACTION_PAUSE_SERVICE"
 const val ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
 const val ACTION_SHOW_MAPS_ACTIVITY = "ACTION_SHOW_MAPS_ACTIVITY"
 
+const val DISTANCE_TO_CATCH_FUEL = 20f
+
 const val NOTIFICATION_CHANNEL_ID = "game_channel"
 const val NOTIFICATION_CHANNEL_NAME = "game_ongoing"
 // At least to 1 to work
