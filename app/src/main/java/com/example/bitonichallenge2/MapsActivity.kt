@@ -67,8 +67,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 latitude = it.latitude
                 longitude = it.longitude
             }
-            for(coords in fuelCoordinates){
-                println("Distance is ${distanceFromMarkers(location,coords)}")
+            for(i in fuelCoordinates.indices){
+                if (distanceFromUserAndMarker(location,fuelCoordinates[i])<20f){
+                    println(fuelCoordinates[i])
+                }
             }
         })
         GameService.coordinatesFuel.observe(this,{
@@ -98,7 +100,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
-    private fun distanceFromMarkers(location1 : Location,latLng: LatLng) : Float{
+    private fun distanceFromUserAndMarker(location1 : Location, latLng: LatLng) : Float{
        return location1.distanceTo(Location("coor").apply {
             latitude = latLng.latitude
             longitude = latLng.longitude

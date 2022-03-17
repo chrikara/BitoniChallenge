@@ -51,14 +51,12 @@ class GameService: LifecycleService() {
             when(it.action){
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
-                        Log.d("GameService","Starrr Service")
+
                         startForegroundService()
                     }else{
-                        Log.d("GameService","Resuming Service")
                     }
                 }
-                ACTION_PAUSE_SERVICE -> {
-                    Log.d("GameService","Paused")}
+                ACTION_PAUSE_SERVICE -> { }
                 ACTION_STOP_SERVICE -> {
 
                 }
@@ -114,7 +112,6 @@ class GameService: LifecycleService() {
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
-            Log.d("GameService","Lat:${locationResult.lastLocation.latitude} Lon:${locationResult.lastLocation.longitude}")
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
