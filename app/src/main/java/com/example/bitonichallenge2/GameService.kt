@@ -25,7 +25,7 @@ class GameService: LifecycleService() {
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
-        var coordinatesFuel = MutableLiveData<MutableList<LatLng>>()
+        var coordinatesInitialFuel = MutableLiveData<MutableList<LatLng>>()
     }
 
     override fun onCreate() {
@@ -69,7 +69,7 @@ class GameService: LifecycleService() {
     private fun startForegroundService(){
         isGameOngoing.postValue(true)
 
-        coordinatesFuel.postValue(Utils.fuelRandomCoordinatesList)
+        coordinatesInitialFuel.postValue(Utils.fuelRandomCoordinatesList)
 
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

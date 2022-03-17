@@ -5,6 +5,7 @@ import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -24,7 +25,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private lateinit var mMap: GoogleMap
     private lateinit var fuelCoordinates: MutableList<LatLng>
     var isGameOngoing : Boolean = false
+    var isDistanceClose : Boolean = false
 
+    var fuelToCatchIndex : Int = -1
     var userMarker : Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +50,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         btnStopGame.setOnClickListener{
             sendCommandToService(ACTION_STOP_SERVICE)
+        }
 
+        btnCatch.setOnClickListener{
+            deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
+            it.visibility = View.INVISIBLE
+            isDistanceClose=false
         }
         subscribeToObservers()
 
@@ -63,16 +71,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 latitude = it.latitude
                 longitude = it.longitude
             }
-
-
-                // Should this for-loop be inside a coroutine scope? It's a long running calculation that will occur every interval
+            // Should this for-loop be inside a coroutine scope? It's a long running calculation that will occur every interval
             // maybe it's too much for the main thread
 
             CoroutineScope(Dispatchers.Default).launch{
+                if(!isDistanceClose){
                 for(i in fuelCoordinates.indices){
-                    if (distanceFromUserAndMarker(currentLocation, fuelCoordinates[i]) < MAX_DISTANCE_TO_CATCH_FUEL){
-                        CoroutineScope(Dispatchers.Main).launch { deleteMarkerFromListAndUpdateMap(i,it) }
+
+                    // Prompts user to catch fuel while he is close
+                    if (distanceFromUserAndMarker(currentLocation, fuelCoordinates[i]) < MAX_DISTANCE_TO_CATCH_FUEL ){
+                        CoroutineScope(Dispatchers.Main).launch {
+                            btnCatch.visibility = View.VISIBLE
+                            fuelToCatchIndex = i
+                            isDistanceClose = true
+                        }
                         break
+
+                    }
+                }
+                } else{
+                    if(distanceFromUserAndMarker(currentLocation,fuelCoordinates[fuelToCatchIndex])> MAX_DISTANCE_TO_CATCH_FUEL){
+                        CoroutineScope(Dispatchers.Main).launch {
+                            btnCatch.visibility = View.VISIBLE
+                            fuelToCatchIndex = -1
+                            isDistanceClose = false
+                        }
                     }
                 }
             }
@@ -82,17 +105,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
         })
-        GameService.coordinatesFuel.observe(this,{
+        GameService.coordinatesInitialFuel.observe(this,{
             fuelCoordinates=it
             markerListFromLatLngList(mMap,it)
 
         })
     }
 
-    private fun deleteMarkerFromListAndUpdateMap(index:Int,latLng: LatLng) {
+    private fun deleteMarkerFromListAndUpdateMap(index:Int,currentLatLng: LatLng) {
         fuelCoordinates.removeAt(index)
         mMap.clear()
-        updateUserMarker(latLng)
+        updateUserMarker(currentLatLng)
         markerListFromLatLngList(mMap,fuelCoordinates)
     }
 
