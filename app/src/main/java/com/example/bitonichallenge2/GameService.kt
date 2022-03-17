@@ -19,7 +19,7 @@ import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
     var isFirstGame = true
-    var isServiceKilled = false
+
 
 
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -27,12 +27,14 @@ class GameService: LifecycleService() {
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
         var coordinatesInitialFuel = MutableLiveData<MutableList<Fuel>>()
+        var isServiceKilled = false
     }
 
     override fun onCreate() {
         super.onCreate()
         println("mpike")
 
+        isServiceKilled = false
         postInitialValues()
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
@@ -42,6 +44,7 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
 
+        Log.d("MapsActivity" ,"Service is killed? $isServiceKilled")
         if(!isServiceKilled){
             coordinatesInitialFuel.postValue(Utils.addRandomCoordsToAnEmptyList(Utils.fuelRandomCoordinatesList))
             isGameOngoing.postValue(false)

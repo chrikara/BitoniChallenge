@@ -55,6 +55,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             menu!!.getItem(0)!!.isVisible = true
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
             it.visibility = View.GONE
+
             btnPauseGame.visibility = View.VISIBLE
 
         }
@@ -113,6 +114,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     }
                 }
                 } else{
+                    // If user walks away from catchable position
                     if(distanceFromUserAndMarker(currentLocation,fuelsOnMap[fuelToCatchIndex].coordinates)> MAX_DISTANCE_TO_CATCH_FUEL){
 
                         CoroutineScope(Dispatchers.Main).launch {
@@ -120,6 +122,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
+                        // If user just resumed game and is in a catchable position
                     }else if(fuelToCatchIndex!=-1){
                         CoroutineScope(Dispatchers.Main).launch{btnCatch.visibility = View.VISIBLE}
                     }
