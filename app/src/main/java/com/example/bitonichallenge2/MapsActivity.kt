@@ -5,6 +5,8 @@ import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
 import com.example.bitonichallenge2.model.ACTION_STOP_SERVICE
 import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
@@ -27,7 +29,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private lateinit var mMap: GoogleMap
     private lateinit var fuelCoordinates: MutableList<LatLng>
     var isGameOngoing : Boolean = false
-    var a : String? = null
 
     var userMarker : Marker? = null
 
@@ -67,9 +68,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 latitude = it.latitude
                 longitude = it.longitude
             }
+
             for(i in fuelCoordinates.indices){
                 if (distanceFromUserAndMarker(location,fuelCoordinates[i])<20f){
-                    println(fuelCoordinates[i])
+                    Toast.makeText(this,"Το πήρα!",Toast.LENGTH_LONG).show()
+                    deleteMarkerFromListAndUpdateMap(i,it)
+                    break
                 }
             }
         })
@@ -79,6 +83,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         })
     }
+
+    private fun deleteMarkerFromListAndUpdateMap(index:Int,latLng: LatLng) {
+        fuelCoordinates.removeAt(index)
+        mMap.clear()
+        updateUserMarker(latLng)
+        markerListFromLatLngList(mMap,fuelCoordinates)
+    }
+
     private fun markerListFromLatLngList(mMap:GoogleMap,mutableListLatLng: MutableList<LatLng>) : MutableList<Marker>{
         val markersList = mutableListOf<Marker>()
 
@@ -90,18 +102,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         return markersList
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
 
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-    }
-
-    private fun distanceFromUserAndMarker(location1 : Location, latLng: LatLng) : Float{
-       return location1.distanceTo(Location("coor").apply {
+    private fun distanceFromUserAndMarker(location : Location, latLng: LatLng) : Float{
+       return location.distanceTo(Location("coords").apply {
             latitude = latLng.latitude
             longitude = latLng.longitude
         })
@@ -111,6 +115,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18f))
         userMarker?.remove()
         userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("Marker in Sydney").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+    }
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+
+
+        // Add a marker in Sydney and move the camera
+        val sydney = LatLng(-34.0, 151.0)
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
