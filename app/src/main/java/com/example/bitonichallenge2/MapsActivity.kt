@@ -66,7 +66,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             mapFragment.alpha(1f)
 
             it.visibility = View.GONE
-            spMapStyles.visibility = View.INVISIBLE
+            spMapStyles.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
 
             mapFragment.alpha(1f)
