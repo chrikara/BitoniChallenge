@@ -118,7 +118,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         btnCatch.setOnClickListener{
             try{
-                Toast.makeText(this,"Caught ${fuelsOnMap[fuelToCatchIndex].litres}!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this,"Caught ${fuelsOnMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
                 deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
                 it.visibility = View.INVISIBLE
                 isDistanceClose = false

@@ -68,11 +68,7 @@ class GameService: LifecycleService() {
 
             when(it.action){
                 ACTION_START_OR_RESUME_SERVICE -> {
-                    if(isFirstGame){
-                        startForegroundService()
-                    }else{
-                        startForegroundService()
-                    }
+                    startForegroundService()
                 }
                 ACTION_PAUSE_SERVICE -> {
                     pauseService()
