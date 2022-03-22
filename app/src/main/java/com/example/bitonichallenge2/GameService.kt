@@ -29,6 +29,7 @@ class GameService: LifecycleService() {
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
         var coordinatesInitialFuel = MutableLiveData<MutableList<Fuel>>()
+        var isProgressBarVisible = MutableLiveData<Boolean>()
     }
 
     override fun onCreate() {
@@ -133,11 +134,11 @@ class GameService: LifecycleService() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
-            Log.d("GameService","mpike OnLocation")
 
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
+            Log.d("GameService1","${locationResult.lastLocation.latitude}")
 
             // This is fired just once after game starts and user is given initial coordinate by GPS,
             // then generates random fuel markers on the map
@@ -146,6 +147,10 @@ class GameService: LifecycleService() {
 
                 MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!, ZOOM_CAMERA))
                 MapsActivity.isGameJustStarted = false
+                isProgressBarVisible.postValue(false)
+                Log.d("GameService2","${isProgressBarVisible.value}")
+
+
             }
         }
     }

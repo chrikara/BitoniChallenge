@@ -56,6 +56,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+
         subscribeToObservers()
         fuelsOnMap = mutableListOf()
 
@@ -75,6 +76,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 isGameJustStarted=true
                 btnSendCommand.text = "Resume"
                 btnCatch.isEnabled = false
+                GameService.isProgressBarVisible.postValue(true)
             }
         }
 
@@ -127,6 +129,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
     private fun subscribeToObservers(){
+        GameService.isProgressBarVisible.observe(this,{
+            if(it){
+                progressBar.visibility = View.VISIBLE
+                mapFragment.alpha(0.1f)
+            }else{
+                progressBar.visibility = View.GONE
+                mapFragment.alpha(1f)
+            }
+        })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
 
@@ -321,4 +332,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         }
 
     }
+
 }

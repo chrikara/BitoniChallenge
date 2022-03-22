@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.location.Location
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
 import pub.devrel.easypermissions.EasyPermissions
 import kotlin.random.Random
@@ -69,6 +70,7 @@ object Utils {
             BitmapDescriptorFactory.fromBitmap(bitmap)
         }
     }
+
 
 
 
