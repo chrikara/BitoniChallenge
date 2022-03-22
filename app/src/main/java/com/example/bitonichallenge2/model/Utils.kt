@@ -49,7 +49,7 @@ object Utils {
                 latitude = 0.0
                 longitude = 0.0
             }
-            while (currentlocation.distanceTo(randomLocation) > DIAMETER){
+            while (currentlocation.distanceTo(randomLocation) > RADIUS){
                 latRand = Random.nextDouble(currentlocation.latitude-0.0071,currentlocation.latitude+0.0071)
                 longRand = Random.nextDouble(currentlocation.longitude-0.0139999,currentlocation.latitude+0.0139999)
                 randomLocation.latitude = latRand

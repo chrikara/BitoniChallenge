@@ -68,8 +68,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             btnPauseGame.visibility = View.VISIBLE
             btnCatch.visibility = View.VISIBLE
 
-            mapFragment.alpha(1f)
-            mMap.uiSettings.setAllGesturesEnabled(true)
+            isMapPaused(false)
 
             // This is to fire a GameService-if-statement that posts initial fuel coordinates and initial user location (ctrl+left click isGameJustStarted)
             if(!isGameJustStarted && btnSendCommand.text == "Start") {
@@ -77,7 +76,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 btnSendCommand.text = "Resume"
                 btnCatch.isEnabled = false
             }
-
         }
 
 
@@ -91,7 +89,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                         2 -> {setCustomMapStyle(R.raw.map_style_dark)}
                     }
                 }
-
                 override fun onNothingSelected(parent: AdapterView<*>?) {
                     TODO("Not yet implemented")
                 }
@@ -99,7 +96,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             }
         }
 
-        btnGoToUser.setOnClickListener{
+        fabGoToUser.setOnClickListener{
             try{
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!, ZOOM_CAMERA))
             }catch (e:Exception){}
@@ -107,8 +104,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
         btnPauseGame.setOnClickListener{
-            mapFragment.alpha(0.6f)
-            mMap.uiSettings.setAllGesturesEnabled(false)
+            isMapPaused(true)
 
             sendCommandToService(ACTION_PAUSE_SERVICE)
             it.visibility = View.GONE
@@ -131,8 +127,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
     private fun subscribeToObservers(){
-        GameService.isGameOngoing.observe(this,{
-        })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
 
@@ -170,14 +164,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                             isDistanceClose = false
                         }
                         // If user just resumed game and is in a catchable position
-                    }else if(fuelToCatchIndex!=-1){
-                        CoroutineScope(Dispatchers.Main).launch{btnCatch.visibility = View.VISIBLE}
                     }
+
                 }
             }
         })
         GameService.coordinatesInitialFuel.observe(this,{
-
             fuelsOnMap=it
             addFuelMarkersToMap(mMap,it)
         })
@@ -297,8 +289,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     btnPauseGame.visibility = View.GONE
                     menu?.getItem(0)?.isVisible = false
 
-                    mapFragment.alpha(1f)
-                    mMap.uiSettings.setAllGesturesEnabled(true)
+                    isMapPaused(false)
 
 
 
@@ -315,5 +306,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun SupportMapFragment.alpha(alpha : Float){
         this.view?.alpha = alpha
+    }
+
+
+    // Map freezes if user pauses the game
+    private fun isMapPaused(paused: Boolean){
+
+        if(paused){
+            mapFragment.alpha(0.6f)
+            mMap.uiSettings.setAllGesturesEnabled(false)
+        }else{
+            mapFragment.alpha(1f)
+            mMap.uiSettings.setAllGesturesEnabled(true)
+        }
+
     }
 }

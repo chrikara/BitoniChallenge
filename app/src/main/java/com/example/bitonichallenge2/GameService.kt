@@ -139,8 +139,8 @@ class GameService: LifecycleService() {
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
 
-            // This is fired just once after game starts and user is given initial coordinate by GPS
-            // and generates random fuel markers on the map
+            // This is fired just once after game starts and user is given initial coordinate by GPS,
+            // then generates random fuel markers on the map
             if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
                 coordinatesInitialFuel.postValue(Utils.generateFuelListWithin120mRad(locationResult.lastLocation))
 

@@ -13,7 +13,7 @@ val XANTHI_CENTER = LatLng(41.1396, 24.8877)
 const val ZOOM_CAMERA = 17.5f
 
 const val MAX_DISTANCE_TO_CATCH_FUEL = 20f
-const val DIAMETER = 120f
+const val RADIUS = 120f
 
 const val INITIAL_FUEL_MARKERS = 10
 
