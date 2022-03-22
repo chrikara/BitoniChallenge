@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Looper
 import android.util.Log
@@ -45,7 +46,6 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
 
-            coordinatesInitialFuel.postValue(Utils.addRandomCoordsToAnEmptyList(Utils.fuelRandomCoordinatesList))
             isGameOngoing.postValue(false)
 
 
@@ -128,19 +128,23 @@ class GameService: LifecycleService() {
             fusedLocationProviderClient.removeLocationUpdates(lastLocation)
         }
     }
-    var count = 0
+
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
+            Log.d("GameService","mpike OnLocation")
 
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
 
-            Log.d("GameService", "isGameJust ${MapsActivity.isGameJustStarted} coords ${coordinatesUser.value}")
+            // This is fired just once after game starts and user is given initial coordinate by GPS
+            // and generates random fuel markers on the map
             if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
-                MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!,18f))
+                coordinatesInitialFuel.postValue(Utils.generateFuelListWithin120mRad(locationResult.lastLocation))
+
+                MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!, ZOOM_CAMERA))
                 MapsActivity.isGameJustStarted = false
             }
         }
@@ -162,7 +166,10 @@ class GameService: LifecycleService() {
         val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID,
             NOTIFICATION_CHANNEL_NAME,
             NotificationManager.IMPORTANCE_LOW
-        )
+        ).apply {
+            lightColor = Color.rgb(0,0,255)
+            enableLights(true)
+        }
 
         notificationManager.createNotificationChannel(channel)
     }

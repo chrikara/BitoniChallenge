@@ -17,8 +17,6 @@ import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.GoogleMap.MAP_TYPE_NORMAL
-import com.google.android.gms.maps.GoogleMap.MAP_TYPE_TERRAIN
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
@@ -37,6 +35,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private lateinit var mapFragment: SupportMapFragment
     var isDistanceClose : Boolean = false
 
+    lateinit var currentLocation : Location
     var fuelToCatchIndex : Int = -1
     var userMarker : Marker? = null
 
@@ -57,25 +56,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-
+        subscribeToObservers()
         fuelsOnMap = mutableListOf()
 
         btnSendCommand.setOnClickListener {
-            menu!!.getItem(0)!!.isVisible = true
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
-            mapFragment.alpha(1f)
 
+            menu!!.getItem(0)!!.isVisible = true
             it.visibility = View.GONE
             spMapStyles.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
+            btnCatch.visibility = View.VISIBLE
 
             mapFragment.alpha(1f)
             mMap.uiSettings.setAllGesturesEnabled(true)
 
-
+            // This is to fire a GameService-if-statement that posts initial fuel coordinates and initial user location (ctrl+left click isGameJustStarted)
             if(!isGameJustStarted && btnSendCommand.text == "Start") {
                 isGameJustStarted=true
                 btnSendCommand.text = "Resume"
+                btnCatch.isEnabled = false
             }
 
         }
@@ -101,7 +101,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         btnGoToUser.setOnClickListener{
             try{
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!,18f))
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!, ZOOM_CAMERA))
             }catch (e:Exception){}
         }
 
@@ -120,11 +120,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             try{
                 Toast.makeText(this,"Caught ${fuelsOnMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
                 deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
-                it.visibility = View.INVISIBLE
+
+                it.isEnabled = false
                 isDistanceClose = false
             }catch (e:Exception){e.printStackTrace()}
         }
-        subscribeToObservers()
 
 
     }
@@ -135,10 +135,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
-            val currentLocation = Location("user").apply {
+
+            currentLocation = Location("user").apply {
                 latitude = it.latitude
                 longitude = it.longitude
             }
+
             // Should this for-loop be inside a coroutine scope? It's a long running calculation that will occur every interval
             // maybe it's too much for the main thread
 
@@ -147,25 +149,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 if(!isDistanceClose){
                 for(i in fuelsOnMap.indices){
 
-
-
-                    // Prompts user to catch fuel while he is close
+                    // Prompts user to catch fuel if he is close to a fuel marker
                     if (distanceFromUserAndMarker(currentLocation, fuelsOnMap[i].coordinates) < MAX_DISTANCE_TO_CATCH_FUEL ){
                         CoroutineScope(Dispatchers.Main).launch {
-                            btnCatch.visibility = View.VISIBLE
+                            btnCatch.isEnabled = true
                             fuelToCatchIndex = i
                             isDistanceClose = true
                         }
                         break
-
                     }
                 }
+
                 } else{
                     // If user walks away from catchable position
                     if(distanceFromUserAndMarker(currentLocation,fuelsOnMap[fuelToCatchIndex].coordinates)> MAX_DISTANCE_TO_CATCH_FUEL){
 
                         CoroutineScope(Dispatchers.Main).launch {
-                            btnCatch.visibility = View.INVISIBLE
+                            btnCatch.isEnabled = false
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
@@ -175,53 +175,47 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     }
                 }
             }
-
-
-
-
-
         })
         GameService.coordinatesInitialFuel.observe(this,{
 
             fuelsOnMap=it
-            markerListFromFuelList(mMap,it)
+            addFuelMarkersToMap(mMap,it)
         })
     }
+   // Adds each fuel as a marker to the map
+    private fun addFuelMarkersToMap(mMap:GoogleMap, mutableListFuel: MutableList<Fuel>){
 
+        for (fuel in mutableListFuel){
+            mMap.addMarker(MarkerOptions().icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas)).position(fuel.coordinates).title(fuel.litres.toString()))
+        }
+    }
+
+    // Clears whole map, updates map with user marker, all fuels except from the removed fuel
     private fun deleteMarkerFromListAndUpdateMap(index:Int,currentLatLng: LatLng) {
         fuelsOnMap.removeAt(index)
         mMap.clear()
         updateUserMarker(currentLatLng)
-        markerListFromFuelList(mMap,fuelsOnMap)
+        addFuelMarkersToMap(mMap,fuelsOnMap)
     }
 
-    private fun markerListFromFuelList(mMap:GoogleMap, mutableListFuel: MutableList<Fuel>) : MutableList<Marker>{
-        val markersList = mutableListOf<Marker>()
-
-        for (fuel in mutableListFuel){
-            mMap.addMarker(MarkerOptions().icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas)).position(fuel.coordinates).title(fuel.litres.toString()))?.let {
-                markersList.add(it)
-            }
-        }
-        return markersList
+    // So that every last location is deleted
+    private fun updateUserMarker(userLatLng: LatLng){
+        userMarker?.remove()
+        userMarker = mMap.addMarker(MarkerOptions().position(userLatLng).title("It's me").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
     }
 
 
-
-    private fun distanceFromUserAndMarker(location : Location, latLng: LatLng) : Float{
-       return location.distanceTo(Location("coords").apply {
-            latitude = latLng.latitude
-            longitude = latLng.longitude
+    private fun distanceFromUserAndMarker(currentLocation : Location, fuelLocation: LatLng) : Float{
+       return currentLocation.distanceTo(Location("coords").apply {
+            latitude = fuelLocation.latitude
+            longitude = fuelLocation.longitude
         })
     }
 
-    private fun updateUserMarker(latLng: LatLng){
-        userMarker?.remove()
-        userMarker = mMap.addMarker(MarkerOptions().position(latLng).title("It's me").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
-    }
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(XANTHI_KENTRO,15f))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(XANTHI_CENTER, ZOOM_CAMERA))
     }
 
     private fun setCustomMapStyle(mapStyle:Int) {

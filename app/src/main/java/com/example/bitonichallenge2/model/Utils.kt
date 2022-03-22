@@ -3,12 +3,12 @@ package com.example.bitonichallenge2.model
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.location.Location
 import android.os.Build
-import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
 import pub.devrel.easypermissions.EasyPermissions
+import kotlin.random.Random
 
 object Utils {
 
@@ -28,23 +28,39 @@ object Utils {
             )
         }
 
-
-
-
-    fun addRandomCoordsToAnEmptyList(fuelRandomCoords : MutableList<Fuel>) : MutableList<Fuel>{
-        val newList = mutableListOf<Fuel>()
-        for (fuel in fuelRandomCoords){
-            newList.add(fuel)
+    private fun randomLitres() : Int {
+        return when (Random.nextInt(1,5)){
+            1-> 10
+            2-> 15
+            3-> 20
+            else -> 25
         }
-        return newList
-
     }
-    var fuelRandomCoordinatesList = mutableListOf<Fuel>(
-        Fuel(LatLng(41.1438, 24.9001),10),
-        Fuel(LatLng(41.1445, 24.8988),15),
-        Fuel(LatLng(41.1439, 24.8979),20),
-        Fuel(LatLng(41.1434, 24.8988),25),
-    )
+
+    fun generateFuelListWithin120mRad(currentlocation : Location) : MutableList<Fuel> {
+        val mutableFuelList = mutableListOf<Fuel>()
+        val randomLocation = Location("random")
+
+        var latRand : Double
+        var longRand : Double
+
+        repeat (INITIAL_FUEL_MARKERS){
+                randomLocation.apply {
+                latitude = 0.0
+                longitude = 0.0
+            }
+            while (currentlocation.distanceTo(randomLocation) > DIAMETER){
+                latRand = Random.nextDouble(currentlocation.latitude-0.0071,currentlocation.latitude+0.0071)
+                longRand = Random.nextDouble(currentlocation.longitude-0.0139999,currentlocation.latitude+0.0139999)
+                randomLocation.latitude = latRand
+                randomLocation.longitude = longRand
+            }
+            mutableFuelList.add(Fuel(LatLng(randomLocation.latitude,randomLocation.longitude), randomLitres()))
+        }
+
+        return mutableFuelList
+    }
+
     fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
         return ContextCompat.getDrawable(context, vectorResId)?.run {
             setBounds(0, 0, intrinsicWidth, intrinsicHeight)
