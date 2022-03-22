@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -76,6 +77,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 isGameJustStarted=true
                 btnSendCommand.text = "Resume"
                 btnCatch.isEnabled = false
+
+
                 GameService.isProgressBarVisible.postValue(true)
             }
         }
@@ -130,17 +133,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun subscribeToObservers(){
         GameService.isProgressBarVisible.observe(this,{
-            if(it){
-                progressBar.visibility = View.VISIBLE
-                mapFragment.alpha(0.1f)
-            }else{
-                progressBar.visibility = View.GONE
-                mapFragment.alpha(1f)
-            }
+            setUpProgressBarVisibility(it)
         })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
-
+            Log.d("MapsActivity2","Coord")
             currentLocation = Location("user").apply {
                 latitude = it.latitude
                 longitude = it.longitude
@@ -174,8 +171,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
-                        // If user just resumed game and is in a catchable position
                     }
+
 
                 }
             }
@@ -300,6 +297,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     btnPauseGame.visibility = View.GONE
                     menu?.getItem(0)?.isVisible = false
 
+
                     isMapPaused(false)
 
 
@@ -309,10 +307,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     isDistanceClose = false
                     fuelsOnMap.clear()
                     mMap.clear()
+                    Log.d("MapsActivity1","Stopped")
+
                 }
                 .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
                 .create()
         dialog.show()
+    }
+    private fun setUpProgressBarVisibility(isGameJustStarted : Boolean){
+        if(isGameJustStarted){
+            progressBar.visibility = View.VISIBLE
+            mapFragment.alpha(0.1f)
+        }else{
+            progressBar.visibility = View.GONE
+            mapFragment.alpha(1f)
+        }
+
     }
 
     private fun SupportMapFragment.alpha(alpha : Float){

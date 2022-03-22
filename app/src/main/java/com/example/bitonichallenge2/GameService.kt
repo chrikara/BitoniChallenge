@@ -20,7 +20,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
-    var isFirstGame = true
 
 
 
@@ -54,9 +53,7 @@ class GameService: LifecycleService() {
 
     private fun killService(){
 
-        isFirstGame = true
         isGameOngoing.postValue(false)
-        coordinatesUser.postValue(coordinatesUser.value)
         stopForeground(true) // Removes notification
         stopSelf() // Removes whole service
     }
