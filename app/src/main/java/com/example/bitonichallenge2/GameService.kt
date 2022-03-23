@@ -128,24 +128,27 @@ class GameService: LifecycleService() {
         }
     }
 
+    lateinit var lastLocationLatLng: LatLng
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
-
+            lastLocationLatLng = LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude)
 
             if(isGameOngoing.value!!){
-                coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
+                coordinatesUser.postValue(lastLocationLatLng)
             }
-
-            // This is fired just once after game starts and user is given initial coordinate by GPS,
-            // then generates random fuel markers on the map
+            // This is fired just once after game starts and after user is given initial coordinates by GPS,
+            // then creates fuel list with random fuel instances close to the user.
             if(isGameJustStarted.value!=null && isGameJustStarted.value!! && coordinatesUser.value!=null){
-
                 coordinatesInitialFuel.postValue(generateFuelListWithin120mRad(locationResult.lastLocation))
+                MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastLocationLatLng, ZOOM_CAMERA))
+
                 isGameJustStarted.value = false // If I use postValue here, delay is so much more. Why is that?
 
 
             }
+
+
         }
     }
 

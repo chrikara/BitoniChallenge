@@ -35,9 +35,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private lateinit var fuelsOnMap: MutableList<Fuel>
     private lateinit var mapFragment: SupportMapFragment
-    var isDistanceClose : Boolean = false
-
     lateinit var currentLocation : Location
+
+    var isDistanceClose : Boolean = false
     var fuelToCatchIndex : Int = -1
     var userMarker : Marker? = null
 
@@ -64,16 +64,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         btnSendCommand.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
 
-            menu!!.getItem(0)!!.isVisible = true
-            it.visibility = View.GONE
-            spMapStyles.visibility = View.GONE
+            btnSendCommand.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
             btnCatch.visibility = View.VISIBLE
 
             isMapPaused(false)
 
             // This is to fire a GameService-if-statement that posts initial fuel coordinates and initial user location (ctrl+left click isGameJustStarted)
+            // JUST ONCE THE GAME STARTS
             if(btnSendCommand.text == "Start") {
+                menu!!.getItem(0)!!.isVisible = true
+                spMapStyles.visibility = View.GONE
+                fabGoToUser.visibility = View.VISIBLE
+
                 GameService.isGameJustStarted.postValue(true)
             }
         }
@@ -108,7 +111,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             isMapPaused(true)
 
             sendCommandToService(ACTION_PAUSE_SERVICE)
-            it.visibility = View.GONE
+            btnPauseGame.visibility = View.GONE
             btnSendCommand.visibility = View.VISIBLE
             btnCatch.visibility = View.INVISIBLE
         }
@@ -134,7 +137,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 btnCatch.isEnabled = false
                 GameService.isProgressBarVisible.postValue(true)
             }else{
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!, ZOOM_CAMERA))
                 GameService.isProgressBarVisible.postValue(false)
             }
         })
@@ -147,7 +149,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 latitude = it.latitude
                 longitude = it.longitude
             }
-
             // Should this for-loop be inside a coroutine scope? It's a long running calculation that will occur every interval
             // maybe it's too much for the main thread
 
@@ -169,7 +170,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 } else{
                     // If user walks away from catchable position
                     if(distanceFromUserAndMarker(currentLocation,fuelsOnMap[fuelToCatchIndex].coordinates)> MAX_DISTANCE_TO_CATCH_FUEL){
-
                         CoroutineScope(Dispatchers.Main).launch {
                             animateCatchButton(false)
                             fuelToCatchIndex = -1
@@ -182,13 +182,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             }
         })
         GameService.coordinatesInitialFuel.observe(this,{
-            Log.d("MapsActivity", "$it")
             fuelsOnMap=it
-            addFuelMarkersToMap(mMap,it)
+            addFuelMarkersToMap(it)
         })
     }
    // Adds each fuel as a marker to the map
-    private fun addFuelMarkersToMap(mMap:GoogleMap, mutableListFuel: MutableList<Fuel>){
+    private fun addFuelMarkersToMap(mutableListFuel: MutableList<Fuel>){
 
         for (fuel in mutableListFuel){
             mMap.addMarker(MarkerOptions()
@@ -203,7 +202,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         fuelsOnMap.removeAt(index)
         mMap.clear()
         updateUserMarker(currentLatLng)
-        addFuelMarkersToMap(mMap,fuelsOnMap)
+        addFuelMarkersToMap(fuelsOnMap)
     }
 
     // So that every last location is deleted
@@ -325,17 +324,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 .setMessage("Do you want to cancel this game?")
                 .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
                     sendCommandToService(ACTION_STOP_SERVICE)
+
                     btnSendCommand.visibility = View.VISIBLE
-                    spMapStyles.visibility = View.VISIBLE
-                    btnCatch.visibility = View.INVISIBLE
-                    animateCatchButton(false)
                     btnPauseGame.visibility = View.GONE
+                    btnCatch.visibility = View.INVISIBLE
+                    fabGoToUser.visibility = View.INVISIBLE
+                    spMapStyles.visibility = View.VISIBLE
                     menu?.getItem(0)?.isVisible = false
 
+                    animateCatchButton(false)
 
                     isMapPaused(false)
-
-
 
                     btnSendCommand.text = "Start"
 
@@ -380,7 +379,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private fun gasIconFromSpinner() : Int{
         return when(spMapStyles.selectedItemPosition){
             0 -> R.drawable.ic_gas_black
-            1 -> R.drawable.ic_gas_white
+            1 -> R.drawable.ic_gas_red
             2 -> R.drawable.ic_gas_white
             else -> R.drawable.ic_gas_black
         }
