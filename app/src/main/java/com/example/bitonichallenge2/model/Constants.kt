@@ -17,7 +17,7 @@ const val RADIUS = 120f
 
 const val INITIAL_FUEL_MARKERS = 10
 
-const val ANIMATION_DURATION = 300L
+const val ANIMATION_DURATION = 100L
 
 const val NOTIFICATION_CHANNEL_ID = "game_channel"
 const val NOTIFICATION_CHANNEL_NAME = "game_ongoing"

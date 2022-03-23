@@ -2,6 +2,8 @@ package com.example.bitonichallenge2
 
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -88,7 +90,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {}
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                     when (position){
-                        0 -> { mMap.setMapStyle(null)}
+                        0 -> { mMap.setMapStyle(null) }
                         1 -> {setCustomMapStyle(R.raw.map_style_midnight)}
                         2 -> {setCustomMapStyle(R.raw.map_style_dark)}
                     }
@@ -184,7 +186,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         for (fuel in mutableListFuel){
             mMap.addMarker(MarkerOptions()
-                    .icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas,fuel.dimensions))
+                    .icon(Utils.bitmapDescriptorFromVector(this,gasIconFromSpinner(),fuel.dimensions))
                     .position(fuel.coordinates)
                     .title(fuel.litres.toString()))
         }
@@ -231,6 +233,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun animateCatchButton(isCatchable: Boolean) {
         try{
+            // Sometimes, app crashes during animation
                 if (isCatchable) {
                     btnCatch.apply {
                         strokeWidth = 7
@@ -366,6 +369,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             mMap.uiSettings.setAllGesturesEnabled(true)
         }
 
+    }
+
+    private fun gasIconFromSpinner() : Int{
+        return when(spMapStyles.selectedItemPosition){
+            0 -> R.drawable.ic_gas_black
+            1 -> R.drawable.ic_gas_white
+            else -> R.drawable.ic_gas_white
+        }
     }
 
 }
