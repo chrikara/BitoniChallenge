@@ -92,7 +92,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     when (position){
                         0 -> { mMap.setMapStyle(null) }
                         1 -> {setCustomMapStyle(R.raw.map_style_midnight)}
-                        2 -> {setCustomMapStyle(R.raw.map_style_dark)}
+                        2 -> {setCustomMapStyle(R.raw.map_style_midnight_brand)}
+                        3 -> {setCustomMapStyle(R.raw.map_style_muted_blue)}
                     }
                 }
                 override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -375,7 +376,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         return when(spMapStyles.selectedItemPosition){
             0 -> R.drawable.ic_gas_black
             1 -> R.drawable.ic_gas_white
-            else -> R.drawable.ic_gas_white
+            2 -> R.drawable.ic_gas_white
+            else -> R.drawable.ic_gas_black
         }
     }
 
