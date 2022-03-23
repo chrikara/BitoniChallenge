@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.location.Location
 import android.os.Build
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.*
 import pub.devrel.easypermissions.EasyPermissions
 import kotlin.random.Random
@@ -31,10 +30,18 @@ object Utils {
 
     private fun randomLitres() : Int {
         return when (Random.nextInt(1,5)){
-            1-> 10
-            2-> 15
-            3-> 20
-            else -> 25
+            1-> LITRES_SMALL
+            2-> LITRES_MEDIUM
+            3-> LITRES_LARGE
+            else -> LITRES_VERY_LARGE
+        }
+    }
+    private fun dimensionsOfFuel(randomLitres : Int):Int{
+        return when(randomLitres){
+            LITRES_SMALL -> SIZE_SMALL
+            LITRES_MEDIUM -> SIZE_MEDIUM
+            LITRES_LARGE -> SIZE_LARGE
+            else -> SIZE_VERY_LARGE
         }
     }
 
@@ -44,6 +51,7 @@ object Utils {
 
         var latRand : Double
         var longRand : Double
+        var litres : Int
 
         repeat (INITIAL_FUEL_MARKERS){
                 randomLocation.apply {
@@ -56,16 +64,17 @@ object Utils {
                 randomLocation.latitude = latRand
                 randomLocation.longitude = longRand
             }
-            mutableFuelList.add(Fuel(LatLng(randomLocation.latitude,randomLocation.longitude), randomLitres()))
+            litres = randomLitres()
+            mutableFuelList.add(Fuel(LatLng(randomLocation.latitude,randomLocation.longitude), litres, dimensionsOfFuel(litres)))
         }
 
         return mutableFuelList
     }
 
-    fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
+    fun bitmapDescriptorFromVector(context: Context, vectorResId: Int,dimensions : Int): BitmapDescriptor? {
         return ContextCompat.getDrawable(context, vectorResId)?.run {
-            setBounds(0, 0, intrinsicWidth, intrinsicHeight)
-            val bitmap = Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
+            setBounds(0, 0, dimensions, dimensions)
+            val bitmap = Bitmap.createBitmap(dimensions, dimensions, Bitmap.Config.ARGB_8888)
             draw(Canvas(bitmap))
             BitmapDescriptorFactory.fromBitmap(bitmap)
         }

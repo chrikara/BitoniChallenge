@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -15,7 +14,7 @@ import android.widget.AdapterView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.example.bitonichallenge2.model.*
-
+import com.example.bitonichallenge2.model.Utils.hasPermissions
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -122,7 +121,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                 Toast.makeText(this,"Caught ${fuelsOnMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
                 deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
 
-                it.isEnabled = false
+                animateCatchButton(false)
                 isDistanceClose = false
             }catch (e:Exception){e.printStackTrace()}
         }
@@ -137,7 +136,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         })
         GameService.coordinatesUser.observe(this,{
             updateUserMarker(it)
-            Log.d("MapsActivity2","Coord")
             currentLocation = Location("user").apply {
                 latitude = it.latitude
                 longitude = it.longitude
@@ -147,14 +145,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             // maybe it's too much for the main thread
 
             CoroutineScope(Dispatchers.Default).launch{
-                Log.d("MapsFor", "$isDistanceClose")
                 if(!isDistanceClose){
                 for(i in fuelsOnMap.indices){
 
                     // Prompts user to catch fuel if he is close to a fuel marker
                     if (distanceFromUserAndMarker(currentLocation, fuelsOnMap[i].coordinates) < MAX_DISTANCE_TO_CATCH_FUEL ){
                         CoroutineScope(Dispatchers.Main).launch {
-                            btnCatch.isEnabled = true
+                            animateCatchButton(true)
                             fuelToCatchIndex = i
                             isDistanceClose = true
                         }
@@ -167,7 +164,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     if(distanceFromUserAndMarker(currentLocation,fuelsOnMap[fuelToCatchIndex].coordinates)> MAX_DISTANCE_TO_CATCH_FUEL){
 
                         CoroutineScope(Dispatchers.Main).launch {
-                            btnCatch.isEnabled = false
+                            animateCatchButton(false)
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
@@ -186,7 +183,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private fun addFuelMarkersToMap(mMap:GoogleMap, mutableListFuel: MutableList<Fuel>){
 
         for (fuel in mutableListFuel){
-            mMap.addMarker(MarkerOptions().icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas)).position(fuel.coordinates).title(fuel.litres.toString()))
+            mMap.addMarker(MarkerOptions()
+                    .icon(Utils.bitmapDescriptorFromVector(this,R.drawable.ic_gas,fuel.dimensions))
+                    .position(fuel.coordinates)
+                    .title(fuel.litres.toString()))
         }
     }
 
@@ -228,8 +228,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         }
     }
+
+    private fun animateCatchButton(isCatchable: Boolean) {
+        try{
+                if (isCatchable) {
+                    btnCatch.apply {
+                        strokeWidth = 7
+                        animate().apply {
+                            rotationYBy(360f)
+                            duration = ANIMATION_DURATION
+                        }
+                        isEnabled = true
+                    }
+                }
+                else {
+                    btnCatch.apply {
+                        strokeWidth = 0
+                        isEnabled = false
+                    }
+                }
+        }catch (e:Exception){
+            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+        }
+
+    }
     private fun requestPermissions(){
-        if(Utils.hasPermissions(this)){
+        if(hasPermissions(this)){
             return
         }
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
@@ -294,6 +319,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     btnSendCommand.visibility = View.VISIBLE
                     spMapStyles.visibility = View.VISIBLE
                     btnCatch.visibility = View.INVISIBLE
+                    animateCatchButton(false)
                     btnPauseGame.visibility = View.GONE
                     menu?.getItem(0)?.isVisible = false
 
@@ -307,7 +333,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
                     isDistanceClose = false
                     fuelsOnMap.clear()
                     mMap.clear()
-                    Log.d("MapsActivity1","Stopped")
 
                 }
                 .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}

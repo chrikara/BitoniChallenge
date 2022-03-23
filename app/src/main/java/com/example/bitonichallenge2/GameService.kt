@@ -15,6 +15,8 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.example.bitonichallenge2.model.*
+import com.example.bitonichallenge2.model.Utils.generateFuelListWithin120mRad
+import com.example.bitonichallenge2.model.Utils.hasPermissions
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
@@ -33,8 +35,6 @@ class GameService: LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
-
-        Log.d("MapsActivity1" ,"Created!")
 
         postInitialValues()
 
@@ -75,7 +75,7 @@ class GameService: LifecycleService() {
                     killService()
                 }
 
-                else -> Log.d("GameService","Nothing")
+                else ->{}
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -110,7 +110,7 @@ class GameService: LifecycleService() {
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){
         if(isGame){
-            if(Utils.hasPermissions(this)){
+            if(hasPermissions(this)){
                 val request = LocationRequest.create().apply {
                     interval = 400L
                     fastestInterval = 100L
@@ -135,17 +135,15 @@ class GameService: LifecycleService() {
             if(isGameOngoing.value!!){
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
-            Log.d("GameService1","${locationResult.lastLocation.latitude}")
 
             // This is fired just once after game starts and user is given initial coordinate by GPS,
             // then generates random fuel markers on the map
             if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
-                coordinatesInitialFuel.postValue(Utils.generateFuelListWithin120mRad(locationResult.lastLocation))
+                coordinatesInitialFuel.postValue(generateFuelListWithin120mRad(locationResult.lastLocation))
 
                 MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!, ZOOM_CAMERA))
                 MapsActivity.isGameJustStarted = false
                 isProgressBarVisible.postValue(false)
-                Log.d("GameService2","${isProgressBarVisible.value}")
 
 
             }

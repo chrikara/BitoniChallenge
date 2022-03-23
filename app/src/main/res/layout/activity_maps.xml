@@ -24,7 +24,8 @@
             android:layout_height="wrap_content"
             android:entries="@array/Styles"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="gone" />
 
         <Button
             android:id="@+id/btnSendCommand"
@@ -34,19 +35,20 @@
             android:layout_weight="1"
             android:text="Start"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            tools:visibility="gone" />
 
         <Button
             android:id="@+id/btnPauseGame"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="Pause game"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btnSendCommand" />
+            app:layout_constraintStart_toEndOf="@+id/btnSendCommand"
+            tools:visibility="visible" />
 
 
     </LinearLayout>
@@ -107,11 +109,10 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCatch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="Catch"
             android:visibility="invisible"
