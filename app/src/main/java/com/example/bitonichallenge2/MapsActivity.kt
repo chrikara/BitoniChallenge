@@ -42,7 +42,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     var userMarker : Marker? = null
 
     companion object{
-        var isGameJustStarted = false
         lateinit var mMap: GoogleMap
     }
 
@@ -74,13 +73,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             isMapPaused(false)
 
             // This is to fire a GameService-if-statement that posts initial fuel coordinates and initial user location (ctrl+left click isGameJustStarted)
-            if(!isGameJustStarted && btnSendCommand.text == "Start") {
-                isGameJustStarted=true
-                btnSendCommand.text = "Resume"
-                btnCatch.isEnabled = false
-
-
-                GameService.isProgressBarVisible.postValue(true)
+            if(btnSendCommand.text == "Start") {
+                GameService.isGameJustStarted.postValue(true)
             }
         }
 
@@ -134,6 +128,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
 
     private fun subscribeToObservers(){
+        GameService.isGameJustStarted.observe(this, {
+            if(it){
+                btnSendCommand.text = "Resume"
+                btnCatch.isEnabled = false
+                GameService.isProgressBarVisible.postValue(true)
+            }else{
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GameService.coordinatesUser.value!!, ZOOM_CAMERA))
+                GameService.isProgressBarVisible.postValue(false)
+            }
+        })
         GameService.isProgressBarVisible.observe(this,{
             setUpProgressBarVisibility(it)
         })
@@ -178,6 +182,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             }
         })
         GameService.coordinatesInitialFuel.observe(this,{
+            Log.d("MapsActivity", "$it")
             fuelsOnMap=it
             addFuelMarkersToMap(mMap,it)
         })

@@ -45,6 +45,7 @@ object Utils {
         }
     }
 
+    // Creates a mutableLisOf<Fuel> that adds Fuel instances within user's circle that has radius = 120m (RADIUS)
     fun generateFuelListWithin120mRad(currentlocation : Location) : MutableList<Fuel> {
         val mutableFuelList = mutableListOf<Fuel>()
         val randomLocation = Location("random")

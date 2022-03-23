@@ -27,6 +27,7 @@ class GameService: LifecycleService() {
 
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     companion object{
+        var isGameJustStarted = MutableLiveData<Boolean>()
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesUser = MutableLiveData<LatLng>()
         var coordinatesInitialFuel = MutableLiveData<MutableList<Fuel>>()
@@ -138,12 +139,10 @@ class GameService: LifecycleService() {
 
             // This is fired just once after game starts and user is given initial coordinate by GPS,
             // then generates random fuel markers on the map
-            if(MapsActivity.isGameJustStarted && coordinatesUser.value!=null){
-                coordinatesInitialFuel.postValue(generateFuelListWithin120mRad(locationResult.lastLocation))
+            if(isGameJustStarted.value!=null && isGameJustStarted.value!! && coordinatesUser.value!=null){
 
-                MapsActivity.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUser.value!!, ZOOM_CAMERA))
-                MapsActivity.isGameJustStarted = false
-                isProgressBarVisible.postValue(false)
+                coordinatesInitialFuel.postValue(generateFuelListWithin120mRad(locationResult.lastLocation))
+                isGameJustStarted.value = false // If I use postValue here, delay is so much more. Why is that?
 
 
             }
