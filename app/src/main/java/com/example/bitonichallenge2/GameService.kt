@@ -94,9 +94,6 @@ class GameService: LifecycleService() {
             }
         }
 
-        override fun onLocationAvailability(p0: LocationAvailability) {
-            super.onLocationAvailability(p0)
-        }
     }
 
     private fun startForegroundService(){
