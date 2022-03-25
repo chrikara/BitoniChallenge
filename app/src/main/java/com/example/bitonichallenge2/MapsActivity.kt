@@ -1,5 +1,7 @@
 package com.example.bitonichallenge2
 
+import android.animation.Animator
+import android.animation.TimeInterpolator
 import android.content.Intent
 import android.location.Location
 import android.os.Build
@@ -9,7 +11,9 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewPropertyAnimator
 import android.widget.Toast
+import androidx.core.view.ViewCompat.animate
 import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -23,6 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
@@ -44,7 +49,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var isDistanceClose = false
     private var isFirstgame = true
 
-
+    private var animationCatch : ViewPropertyAnimator? = null
     private var menu: Menu? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,21 +82,23 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
 
         btnCatch.setOnClickListener{
-
-                Toast.makeText(this@MapsActivity,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
-
-            deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
             btnCatch.isEnabled = false
+            animationCatch?.cancel()
+            animateCatchButton(false)
+
+
+            Toast.makeText(this@MapsActivity,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
+            deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, coordinatesUserMap)
             isDistanceClose = false
         }
 
         fabGoToUser.setOnClickListener{
-            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUserMap, 18f))
+            cameraToUser()
         }
     }
 
     private fun cameraToUser(){
-        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUserMap, 18f))
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUserMap, ZOOM_CAMERA))
 
     }
 
@@ -125,9 +132,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         GameService.coordinatesFuel.observe(this,{
             coordinatesFuelMap = it
-
-            for(i in coordinatesFuelMap.indices){
-            }
             updateFuelMapLocation(coordinatesFuelMap)
         })
     }
@@ -165,6 +169,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 fuelToCatchIndex = -1
                 menu?.getItem(0)?.isVisible = false
                 mMap?.clear()
+                updateUserLocation(coordinatesUserMap)
 
 
             }
@@ -203,6 +208,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     if (distanceFromUserAndMarker(locationConverter(latLng), coordinatesFuelMap[i].coords) < MAX_DISTANCE_TO_CATCH_FUEL ){
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = true
+                            animateCatchButton(true)
                             fuelToCatchIndex = i
                             isDistanceClose = true
                         }
@@ -214,6 +220,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = false
+                            animateCatchButton(false)
                             fuelToCatchIndex = -1
                             isDistanceClose = false
                         }
@@ -243,8 +250,27 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     .position(fuel.coords)
                     .title(fuel.litres.toString())
                     .icon(utils.bitmapDescriptorFromVector(this,R.drawable.ic_baseline_local_gas_station_24,fuel.dimensions)))
+            Log.d("MapsActivity","${fuel.coords}")
         }
     }
+    private fun animateCatchButton(isCatchable: Boolean) {
+            // Sometimes, app crashes during animation
+        CoroutineScope(Dispatchers.Main).launch {
+            if (isCatchable) {
+                btnCatch.apply {
+                    strokeWidth = 7
+                    animate().apply {
+                        rotationYBy(360f)
+                        duration = ANIMATION_DURATION
+                    }
+
+                }
+            }
+            else btnCatch.strokeWidth = 0
+        }
+        }
+
+
 
     private fun alphaMapWhenPaused(paused: Boolean){
         if(paused){
@@ -274,10 +300,10 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
     private fun showCancelGameDialog() {
         val dialog = MaterialAlertDialogBuilder(this,R.style.AlertDialogTheme)
-                .setTitle("Cancel the Run?")
-                .setMessage("Are you sure to cancel the current run and delete all its data?")
+                .setTitle("Cancel game?")
+                .setMessage("Are you sure to cancel current game?")
                 .setIcon(R.drawable.ic_delete)
-                .setPositiveButton("Yes") { _, _ ->
+                .setPositiveButton("Absolutely") { _, _ ->
                     stopGame()
                 }
                 .setNegativeButton("No") { dialogInterface, _ ->

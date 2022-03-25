@@ -16,11 +16,10 @@ const val MY_INTERVAL = 1000L
 const val MY_MAXIMUM_INTERVAL = 200L
 
 const val MAX_DISTANCE_TO_CATCH_FUEL = 20f
-const val RADIUS = 100f
-
+const val RADIUS = 80f
 const val INITIAL_FUEL_MARKERS = 10
 
-const val ANIMATION_DURATION = 100L
+const val ANIMATION_DURATION = 200L
 
 const val NOTIFICATION_CHANNEL_ID = "game_channel"
 const val NOTIFICATION_CHANNEL_NAME = "game_ongoing"

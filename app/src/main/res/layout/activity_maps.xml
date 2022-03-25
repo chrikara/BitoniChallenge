@@ -111,7 +111,6 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <com.google.android.material.button.MaterialButton
-            app:strokeWidth="2dp"
             android:id="@+id/btnCatch"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
