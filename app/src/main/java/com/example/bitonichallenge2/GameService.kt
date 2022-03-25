@@ -22,6 +22,7 @@ class GameService: LifecycleService() {
 
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
+        var isPaused = MutableLiveData<Boolean>()
         var coordinatesFuel = MutableLiveData<MutableList<Fuel>>()
         var coordinatesUser = MutableLiveData<LatLng>()
 
@@ -40,6 +41,7 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
         isGameOngoing.postValue(false)
+        isPaused.postValue(false)
         coordinatesFuel.postValue(mutableListOf())
         coordinatesUser.postValue(LatLng(0.0,0.0))
     }
@@ -54,15 +56,17 @@ class GameService: LifecycleService() {
             when(it.action){
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
-                        Log.d("GameService","Starrr Service")
-
                         startForegroundService()
                     }else{
                         Log.d("GameService","Resuming Service")
+                        isGameOngoing.postValue(true)
+                        isPaused.postValue(false)
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
-                    Log.d("GameService","Paused")}
+                    pauseService()
+                }
+
                 ACTION_STOP_SERVICE -> {
                     Log.d("GameService","Stopped")}
 
@@ -70,6 +74,11 @@ class GameService: LifecycleService() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun pauseService(){
+        isPaused.postValue(true)
+        isGameOngoing.postValue(false)
     }
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){
@@ -100,7 +109,7 @@ class GameService: LifecycleService() {
             }
             if(isFirstGame && coordinatesUser.value!=null){
                 coordinatesFuel.postValue((utils.generateFuelListWithin120mRad(locationResult.lastLocation)))
-                isFirstGame = false
+                isFirstGame=false
             }
         }
 

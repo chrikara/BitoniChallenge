@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import com.example.bitonichallenge2.model.*
 
@@ -54,6 +55,9 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         btnStartGame.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
+        btnPauseGame.setOnClickListener {
+            sendCommandToService(ACTION_PAUSE_SERVICE)
+        }
 
         btnCatch.setOnClickListener{
                 Toast.makeText(this,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
@@ -78,10 +82,12 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             updateUiButtons(it)
         })
 
+
+
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
             updateUserLocation(it)
-            userAndFuelDistance(locationConverter(it))
+            userAndFuelDistance(it)
         })
 
         GameService.coordinatesFuel.observe(this,{
@@ -91,9 +97,14 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
     private fun updateUiButtons(isGamePlaying : Boolean){
         if(isGamePlaying){
+            btnStartGame.visibility = View.GONE
+            btnPauseGame.visibility = View.VISIBLE
+            btnCatch.visibility = View.VISIBLE
+        }else if (!isGamePlaying && GameService.isPaused.value==true){
             btnStartGame.text = "Resume"
-        }else{
-            btnStartGame.text = "Start"
+            btnStartGame.visibility = View.VISIBLE
+            btnPauseGame.visibility = View.GONE
+            btnCatch.visibility = View.GONE
         }
     }
 
@@ -106,13 +117,13 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
-    private fun userAndFuelDistance(userLocation: Location){
+    private fun userAndFuelDistance(latLng: LatLng){
         CoroutineScope(Dispatchers.Default).launch{
             if(!isDistanceClose){
                 for(i in coordinatesFuelMap.indices){
 
                     // Prompts user to catch fuel if he is close to a fuel marker
-                    if (distanceFromUserAndMarker(userLocation, coordinatesFuelMap[i].coords) < MAX_DISTANCE_TO_CATCH_FUEL ){
+                    if (distanceFromUserAndMarker(locationConverter(latLng), coordinatesFuelMap[i].coords) < MAX_DISTANCE_TO_CATCH_FUEL ){
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = true
                             fuelToCatchIndex = i
@@ -124,7 +135,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
             } else{
                 // If user walks away from catchable position
-                if(distanceFromUserAndMarker(userLocation,coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
+                if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
                     CoroutineScope(Dispatchers.Main).launch {
                         btnCatch.isEnabled = false
                         fuelToCatchIndex = -1
@@ -150,9 +161,8 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         return location
     }
     private fun updateFuelMapLocation(listOfFuels : MutableList<Fuel>){
-
-        // This won't fire in screen rotation from observer because mMap is null It will fire from observer when we start our service.
-        // So, we put this on mMap async and it fires from there when we rotate
+        // This won't fire in screen rotation from observer because mMap is null. It will fire from observer when we start our service.
+        // So, we put this on mMap async (onCreate) and it fires from there when we rotate
         for (fuel in listOfFuels){
             mMap?.addMarker(MarkerOptions().position(fuel.coords).title("It's me"))
 
