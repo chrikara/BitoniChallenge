@@ -111,12 +111,14 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         })
 
         GameService.coordinatesUser.observe(this,{
+            coordinatesUserMap = it
+            Log.d("MapsActivity","${coordinatesUserMap} ")
             if(isGameOnGoingMap){
-                coordinatesUserMap = it
                 updateUserLocation(it)
                 updateProgressBarAndMap()
                 userAndFuelDistance(it)
             }
+
 
 
         })
@@ -163,6 +165,8 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 fuelToCatchIndex = -1
                 menu?.getItem(0)?.isVisible = false
                 mMap?.clear()
+
+
             }
         }
     }
@@ -182,14 +186,12 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             isFirstgame = false
         }
     }
-
     private fun updateUserLocation(userLatLng: LatLng){
         userMarker?.remove()
         userMarker = mMap?.addMarker(MarkerOptions()
                 .position(userLatLng)
                 .title("It's me")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
-
     }
 
     private fun userAndFuelDistance(latLng: LatLng){
@@ -216,12 +218,9 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                             isDistanceClose = false
                         }
                     }
-
-
             }
         }
     }
-
     private fun distanceFromUserAndMarker(currentLocation : Location, fuelLocation: LatLng) : Float{
         return currentLocation.distanceTo(Location("coords").apply {
             latitude = fuelLocation.latitude
@@ -244,13 +243,10 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                     .position(fuel.coords)
                     .title(fuel.litres.toString())
                     .icon(utils.bitmapDescriptorFromVector(this,R.drawable.ic_baseline_local_gas_station_24,fuel.dimensions)))
-
-
         }
     }
 
     private fun alphaMapWhenPaused(paused: Boolean){
-
         if(paused){
             mapFragment.view?.alpha = 0.6f
             mMap?.uiSettings?.setAllGesturesEnabled(false)
