@@ -17,7 +17,6 @@ import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
-import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
 
@@ -40,13 +39,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         mapFragment.getMapAsync{
             mMap = it
             updateFuelMapLocation(coordinatesFuelMap)
-            Log.d("MapsActivity","  ${mMap.toString()}")
-
         }
 
         subscribeToObservers()
 
-        btnSendCommand.setOnClickListener {
+        btnStartGame.setOnClickListener {
 
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
@@ -56,6 +53,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun subscribeToObservers(){
         GameService.isGameOngoing.observe(this,{
+            updateUiButtons(it)
         })
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
@@ -68,6 +66,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             updateFuelMapLocation(coordinatesFuelMap)
 
         })
+    }
+    private fun updateUiButtons(isGamePlaying : Boolean){
+        if(isGamePlaying){
+            btnStartGame.text = "Resume"
+        }else{
+            btnStartGame.text = "Start"
+        }
     }
 
     private fun updateUserLocation(userLatLng: LatLng){

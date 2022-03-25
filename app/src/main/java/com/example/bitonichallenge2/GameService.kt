@@ -18,13 +18,15 @@ import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
-    var isFirstGame = true
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesFuel = MutableLiveData<MutableList<Fuel>>()
         var coordinatesUser = MutableLiveData<LatLng>()
+
+        var isFirstGame = true
+
     }
 
     override fun onCreate() {
