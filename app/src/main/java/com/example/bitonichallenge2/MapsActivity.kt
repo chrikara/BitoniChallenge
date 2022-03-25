@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
@@ -27,8 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
-import java.lang.Exception
-import java.lang.NullPointerException
 
 class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
@@ -60,10 +57,10 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             updateFuelMapLocation(coordinatesFuelMap)
             updateUserLocation(coordinatesUserMap)
 
-            GameService.isGameOngoing.value?.let { isGameOnGoing ->
-                val isPaused = !isGameOnGoing
+            GameService.isPaused.value?.let{ isPaused ->
                 alphaMapWhenPaused(isPaused)
             }
+
         }
 
         subscribeToObservers()
@@ -95,7 +92,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private fun subscribeToObservers(){
         GameService.isGameOngoing.observe(this,{
             isGameOnGoingMap = it
-            updateUiButtons(it)
+            updateUi(it)
         })
 
         GameService.coordinatesUser.observe(this,{
@@ -111,28 +108,36 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             updateFuelMapLocation(coordinatesFuelMap)
         })
     }
-    private fun updateUiButtons(isGamePlaying : Boolean){
+    private fun updateUi(isGamePlaying : Boolean){
 
-        // Game is played
-        if(isGamePlaying){
-            btnStartGame.visibility = View.GONE
-            btnPauseGame.visibility = View.VISIBLE
-            btnCatch.visibility = View.VISIBLE
-            menu?.getItem(0)?.isVisible = true
-            alphaMapWhenPaused(false)
-
-            // Game is paused
-        }else if (!isGamePlaying && GameService.isPaused.value==true){
-            btnStartGame.text = "Resume"
-            btnStartGame.visibility = View.VISIBLE
-            btnPauseGame.visibility = View.GONE
-            btnCatch.visibility = View.GONE
-
-            alphaMapWhenPaused(true)
-
-            // Game is stopped
-
-
+        if(isGamePlaying)                                           updateUiScenario(PLAYER_PLAYING)
+        else if(!isGamePlaying && GameService.isPaused.value==true) updateUiScenario(PLAYER_PAUSED)
+        else                                                        updateUiScenario(PLAYER_STOPPED)
+    }
+    private fun updateUiScenario(scenario : String){
+        when(scenario){
+            PLAYER_PLAYING ->{
+                btnStartGame.visibility = View.GONE
+                btnPauseGame.visibility = View.VISIBLE
+                btnCatch.visibility = View.VISIBLE
+                menu?.getItem(0)?.isVisible = true
+                alphaMapWhenPaused(false)
+            }
+            PLAYER_PAUSED ->{
+                btnStartGame.text = "Resume"
+                btnStartGame.visibility = View.VISIBLE
+                btnPauseGame.visibility = View.GONE
+                btnCatch.visibility = View.GONE
+                alphaMapWhenPaused(true)
+            }
+            PLAYER_STOPPED ->{
+                btnStartGame.text = "Start"
+                btnStartGame.visibility = View.VISIBLE
+                btnPauseGame.visibility = View.GONE
+                btnCatch.visibility = View.GONE
+                menu?.getItem(0)?.isVisible = false
+                mMap?.clear()
+            }
         }
     }
     private fun updateProgressBarAndMap(){
@@ -234,6 +239,23 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             }
         }
             return super.onPrepareOptionsMenu(menu)
+    }
+    private fun showCancelTrackingDialog() {
+        val dialog = MaterialAlertDialogBuilder(this,R.style.AlertDialogTheme)
+                .setTitle("Cancel the Run?")
+                .setMessage("Are you sure to cancel the current run and delete all its data?")
+                .setIcon(R.drawable.ic_delete)
+                .setPositiveButton("Yes") { _, _ ->
+                    stopGame()
+                }
+                .setNegativeButton("No") { dialogInterface, _ ->
+                    dialogInterface.cancel()
+                }
+                .create()
+        dialog.show()
+    }
+    private fun stopGame(){
+        sendCommandToService(ACTION_STOP_SERVICE)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

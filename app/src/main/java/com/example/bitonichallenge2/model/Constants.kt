@@ -18,7 +18,7 @@ const val MY_MAXIMUM_INTERVAL = 200L
 const val MAX_DISTANCE_TO_CATCH_FUEL = 20f
 const val RADIUS = 120f
 
-const val INITIAL_FUEL_MARKERS = 10
+const val INITIAL_FUEL_MARKERS = 2
 
 const val ANIMATION_DURATION = 100L
 
@@ -35,3 +35,7 @@ const val LITRES_SMALL = 10
 const val LITRES_MEDIUM = 15
 const val LITRES_LARGE = 20
 const val LITRES_VERY_LARGE = 40
+
+const val PLAYER_PLAYING = "Playing"
+const val PLAYER_PAUSED = "Paused"
+const val PLAYER_STOPPED = "Stopped"

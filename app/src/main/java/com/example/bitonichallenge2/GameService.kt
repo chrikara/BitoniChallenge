@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.location.Location
 import android.os.Build
 import android.os.Looper
 import android.util.Log
@@ -19,6 +20,9 @@ import com.google.android.gms.maps.model.LatLng
 
 class GameService: LifecycleService() {
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    var serviceKilled = false
+    private var userLastLocation : Location = Location("user")
 
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
@@ -39,12 +43,7 @@ class GameService: LifecycleService() {
             updateLocation(it)
         })
     }
-    private fun postInitialValues(){
-        isGameOngoing.postValue(false)
-        isPaused.postValue(false)
-        coordinatesFuel.postValue(mutableListOf())
-        coordinatesUser.postValue(LatLng(0.0,0.0))
-    }
+
 
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
     // why we need Foreground Service
@@ -58,7 +57,6 @@ class GameService: LifecycleService() {
                     if(isFirstGame){
                         startForegroundService()
                     }else{
-                        Log.d("GameService","Resuming Service")
                         isGameOngoing.postValue(true)
                         isPaused.postValue(false)
                     }
@@ -68,17 +66,32 @@ class GameService: LifecycleService() {
                 }
 
                 ACTION_STOP_SERVICE -> {
-                    Log.d("GameService","Stopped")}
-
-                else -> Log.d("GameService","Nothing")
+                    killService()
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private fun postInitialValues(){
+        isPaused.postValue(false)
+        isGameOngoing.postValue(false)
+        coordinatesFuel.postValue(mutableListOf())
+        coordinatesUser.postValue(LatLng(0.0,0.0))
+    }
+
     private fun pauseService(){
         isPaused.postValue(true)
         isGameOngoing.postValue(false)
+    }
+    private fun killService(){
+        isFirstGame=true
+        isPaused.postValue(false)
+        isGameOngoing.postValue(false)
+        coordinatesFuel.postValue(mutableListOf())
+        coordinatesUser.postValue(LatLng(userLastLocation.latitude,userLastLocation.longitude))
+        stopSelf()
+        stopForeground(true)
     }
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){
@@ -103,6 +116,7 @@ class GameService: LifecycleService() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
+            userLastLocation = locationResult.lastLocation
             if(isGameOngoing.value!!){
                 Log.d("GameService","${locationResult.lastLocation.latitude}")
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
