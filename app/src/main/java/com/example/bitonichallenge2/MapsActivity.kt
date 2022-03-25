@@ -26,6 +26,8 @@ import pub.devrel.easypermissions.EasyPermissions
 
 class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
+    lateinit var mapFragment: SupportMapFragment
+
     var mMap: GoogleMap? = null
 
     private var isGameOnGoingMap : Boolean = false
@@ -43,12 +45,19 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         setContentView(R.layout.activity_maps)
         requestPermissions()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
+        mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
+
         mapFragment.getMapAsync{
             mMap = it
             updateFuelMapLocation(coordinatesFuelMap)
+            updateUserLocation(coordinatesUserMap)
+            alphanessWhenRotate()
         }
+
+
+
+
 
         subscribeToObservers()
 
@@ -82,12 +91,13 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             updateUiButtons(it)
         })
 
-
-
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
             updateUserLocation(it)
+            updateProgressBarAndMap()
+
             userAndFuelDistance(it)
+
         })
 
         GameService.coordinatesFuel.observe(this,{
@@ -96,15 +106,36 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         })
     }
     private fun updateUiButtons(isGamePlaying : Boolean){
+
+
         if(isGamePlaying){
             btnStartGame.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
             btnCatch.visibility = View.VISIBLE
+
+
         }else if (!isGamePlaying && GameService.isPaused.value==true){
             btnStartGame.text = "Resume"
             btnStartGame.visibility = View.VISIBLE
             btnPauseGame.visibility = View.GONE
             btnCatch.visibility = View.GONE
+            mapFragment.requireView().alpha = 0.6f
+
+
+
+
+        }
+    }
+    private fun updateProgressBarAndMap(){
+        // Else block is executed when GameService.isFirstGame gets false, that's when all random fuels have been generated
+        if(GameService.isGameOngoing.value!! && GameService.isFirstGame)
+        {
+            progressBar.visibility = View.VISIBLE
+            mapFragment.view?.alpha = 0.1f
+        }
+        else {
+            progressBar.visibility = View.GONE
+            mapFragment.view?.alpha = 1f
         }
     }
 
@@ -168,6 +199,16 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         }
     }
+    private fun alphanessWhenRotate(){
+        GameService.isGameOngoing.value?.let{
+            if(it){
+                mapFragment.requireView().alpha = 1f
+            }else if(it && GameService.isPaused.value!!){
+                mapFragment.requireView().alpha = 0.6f
+            }
+        }
+    }
+
 
 
 
