@@ -1,10 +1,15 @@
 package com.example.bitonichallenge2
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.bitonichallenge2.model.*
@@ -15,12 +20,15 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import java.lang.Exception
+import java.lang.NullPointerException
 
 class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
@@ -37,6 +45,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var fuelToCatchIndex = -1
     private var isDistanceClose = false
 
+    private var menu: Menu? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,10 +65,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 alphaMapWhenPaused(isPaused)
             }
         }
-
-
-
-
 
         subscribeToObservers()
 
@@ -113,6 +118,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             btnStartGame.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
             btnCatch.visibility = View.VISIBLE
+            menu?.getItem(0)?.isVisible = true
             alphaMapWhenPaused(false)
 
             // Game is paused
@@ -121,10 +127,10 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             btnStartGame.visibility = View.VISIBLE
             btnPauseGame.visibility = View.GONE
             btnCatch.visibility = View.GONE
+
             alphaMapWhenPaused(true)
 
             // Game is stopped
-
 
 
         }
@@ -147,7 +153,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f))
         userMarker?.remove()
         userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
-
 
     }
 
@@ -203,7 +208,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
     }
 
-
     private fun alphaMapWhenPaused(paused: Boolean){
 
         if(paused){
@@ -216,9 +220,41 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_maps_activity,menu)
+        this.menu = menu
+        return super.onCreateOptionsMenu(menu)
+    }
 
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        // Make visible the menu if the game is either being played or paused
+        GameService.isGameOngoing.value?.let { isPlaying ->
+            if(isPlaying || GameService.isPaused.value!!){
+                this.menu?.getItem(0)?.isVisible = true
+            }
+        }
+            return super.onPrepareOptionsMenu(menu)
+    }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId){
+            R.id.miCancelGame->{showCancelGameDialog()}
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
+    private fun showCancelGameDialog(){
+        val dialog = MaterialAlertDialogBuilder(this)
+                .setTitle("Cancel Game")
+                .setMessage("Do you want to cancel this game?")
+                .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
+                    sendCommandToService(ACTION_STOP_SERVICE)
+
+                }
+                .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
+                .create()
+        dialog.show()
+    }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
             it.action = action
