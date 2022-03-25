@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.LatLng
 class GameService: LifecycleService() {
     var isFirstGame = true
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
         var coordinatesFuel = MutableLiveData<MutableList<Fuel>>()
@@ -90,8 +91,14 @@ class GameService: LifecycleService() {
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
+
             if(isGameOngoing.value!!){
+                Log.d("GameService","${locationResult.lastLocation.latitude}")
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
+            }
+            if(isFirstGame && coordinatesUser.value!=null){
+                coordinatesFuel.postValue((utils.generateFuelListWithin120mRad(locationResult.lastLocation)))
+                isFirstGame = false
             }
         }
 

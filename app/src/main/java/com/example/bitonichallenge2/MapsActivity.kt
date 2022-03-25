@@ -23,8 +23,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     var mMap: GoogleMap? = null
 
-    private var isGameOnGoing : Boolean = false
-    private var coordinatesFuel : MutableList<Fuel> = mutableListOf()
+    private var isGameOnGoingMap : Boolean = false
+    private var coordinatesFuelMap : MutableList<Fuel> = mutableListOf()
     private var coordinatesUserMap : LatLng = LatLng(0.0,0.0)
 
     private var userMarker : Marker? = null
@@ -37,7 +37,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        mapFragment.getMapAsync{
+            mMap = it
+            updateFuelMapLocation(coordinatesFuelMap)
+            Log.d("MapsActivity","  ${mMap.toString()}")
+
+        }
 
         subscribeToObservers()
 
@@ -56,26 +61,35 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             coordinatesUserMap = it
             updateUserLocation(it)
         })
+        GameService.coordinatesFuel.observe(this,{
+            Log.d("MapsActivity2","  ${mMap.toString()}")
+
+            coordinatesFuelMap = it
+            updateFuelMapLocation(coordinatesFuelMap)
+
+        })
     }
 
     private fun updateUserLocation(userLatLng: LatLng){
 
-            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f))
-            userMarker?.remove()
-            userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f))
+        userMarker?.remove()
+        userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
 
 
+    }
+    private fun updateFuelMapLocation(listOfFuels : MutableList<Fuel>){
 
+        // This won't fire in screen rotation because mMap is null. So, we put this on mMap async
+        for (fuel in listOfFuels){
+            mMap?.addMarker(MarkerOptions().position(fuel.coords).title("It's me"))
 
+        }
     }
 
 
     override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
 
-        val sydney = LatLng(-34.0, 151.0)
-        mMap?.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap?.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
     private fun sendCommandToService(action:String){
