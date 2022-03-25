@@ -178,6 +178,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 btnStartGame.visibility = View.VISIBLE
                 btnPauseGame.visibility = View.GONE
                 btnCatch.visibility = View.GONE
+                btnCatch.isEnabled = false
                 fabGoToUser.visibility = View.GONE
                 isFirstgame = true
                 isDistanceClose = false
@@ -224,6 +225,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = true
                             animateCatchButton(true)
+                            Log.d("MapsActivity","i ${i}")
                             fuelToCatchIndex = i
                             isDistanceClose = true
                         }
