@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -22,7 +23,7 @@ import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
+class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     var mMap: GoogleMap? = null
 
@@ -51,28 +52,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         subscribeToObservers()
 
         btnStartGame.setOnClickListener {
-
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
 
+        btnCatch.setOnClickListener{
+                Toast.makeText(this,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
+                deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
+                btnCatch.isEnabled = false
+                isDistanceClose = false
+        }
+    }
+
+    // Clears whole map, updates map with user marker, all fuels except from the removed fuel
+    private fun deleteMarkerFromListAndUpdateMap(index:Int,currentLatLng: LatLng) {
+        coordinatesFuelMap.removeAt(index)
+        mMap?.clear()
+        updateUserLocation(currentLatLng)
+        updateFuelMapLocation(coordinatesFuelMap)
     }
 
 
     private fun subscribeToObservers(){
         GameService.isGameOngoing.observe(this,{
+            isGameOnGoingMap = it
             updateUiButtons(it)
         })
+
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
             updateUserLocation(it)
-            userAndFuelDistance(userLocationFromLatLng(it))
+            userAndFuelDistance(locationConverter(it))
         })
-        GameService.coordinatesFuel.observe(this,{
-            Log.d("MapsActivity2","  ${mMap.toString()}")
 
+        GameService.coordinatesFuel.observe(this,{
             coordinatesFuelMap = it
             updateFuelMapLocation(coordinatesFuelMap)
-
         })
     }
     private fun updateUiButtons(isGamePlaying : Boolean){
@@ -128,7 +142,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         })
     }
 
-    private fun userLocationFromLatLng(latLng: LatLng) : Location {
+    private fun locationConverter(latLng: LatLng) : Location {
         val location = Location("user").apply {
             latitude = latLng.latitude
             longitude = latLng.longitude
@@ -137,7 +151,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     }
     private fun updateFuelMapLocation(listOfFuels : MutableList<Fuel>){
 
-        // This won't fire in screen rotation because mMap is null. So, we put this on mMap async
+        // This won't fire in screen rotation from observer because mMap is null It will fire from observer when we start our service.
+        // So, we put this on mMap async and it fires from there when we rotate
         for (fuel in listOfFuels){
             mMap?.addMarker(MarkerOptions().position(fuel.coords).title("It's me"))
 
@@ -145,9 +160,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     }
 
 
-    override fun onMapReady(googleMap: GoogleMap) {
 
-    }
 
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
