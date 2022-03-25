@@ -5,24 +5,30 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.example.bitonichallenge2.model.ACTION_SHOW_MAPS_ACTIVITY
-import com.example.bitonichallenge2.model.ACTION_START_OR_RESUME_SERVICE
-import com.example.bitonichallenge2.model.REQUEST_CODE_PERMISSIONS
-import com.example.bitonichallenge2.model.Utils
+import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
 
-    private lateinit var mMap: GoogleMap
+    var mMap: GoogleMap? = null
+
+    private var isGameOnGoing : Boolean = false
+    private var coordinatesFuel : MutableList<Fuel> = mutableListOf()
+    private var coordinatesUserMap : LatLng = LatLng(0.0,0.0)
+
+    private var userMarker : Marker? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,31 +39,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        subscribeToObservers()
 
         btnSendCommand.setOnClickListener {
 
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
         }
 
-        if(intent.action == ACTION_SHOW_MAPS_ACTIVITY){
-            Log.d("GameService","Mpike apo notification")
-        }
+    }
+
+
+    private fun subscribeToObservers(){
+        GameService.isGameOngoing.observe(this,{
+        })
+        GameService.coordinatesUser.observe(this,{
+            coordinatesUserMap = it
+            updateUserLocation(it)
+        })
+    }
+
+    private fun updateUserLocation(userLatLng: LatLng){
+
+            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f))
+            userMarker?.remove()
+            userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
+
+
 
 
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        Log.d("GameService", "New Intent!")
-    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        // Add a marker in Sydney and move the camera
         val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        mMap?.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
+        mMap?.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
     private fun sendCommandToService(action:String){
@@ -67,7 +85,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         }
     }
     private fun requestPermissions(){
-        if(Utils.hasPermissions(this)){
+        if(utils.hasPermissions(this)){
             return
         }
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){

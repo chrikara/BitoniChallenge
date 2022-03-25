@@ -22,7 +22,8 @@ class GameService: LifecycleService() {
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     companion object{
         var isGameOngoing = MutableLiveData<Boolean>()
-        var coordinates = MutableLiveData<LatLng>()
+        var coordinatesFuel = MutableLiveData<MutableList<Fuel>>()
+        var coordinatesUser = MutableLiveData<LatLng>()
     }
 
     override fun onCreate() {
@@ -36,7 +37,8 @@ class GameService: LifecycleService() {
     }
     private fun postInitialValues(){
         isGameOngoing.postValue(false)
-        coordinates.postValue(LatLng(0.0,0.0))
+        coordinatesFuel.postValue(mutableListOf())
+        coordinatesUser.postValue(LatLng(0.0,0.0))
     }
 
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
@@ -69,7 +71,7 @@ class GameService: LifecycleService() {
     @SuppressLint("MissingPermission")
     private fun updateLocation(isGame:Boolean){
         if(isGame){
-            if(Utils.hasPermissions(this)){
+            if(utils.hasPermissions(this)){
                 val request = LocationRequest.create().apply {
                     interval = 5000L
                     fastestInterval = 2000L
@@ -88,9 +90,8 @@ class GameService: LifecycleService() {
     val lastLocation = object : LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
-            Log.d("GameService","Lat:${locationResult.lastLocation.latitude} Lon:${locationResult.lastLocation.longitude}")
             if(isGameOngoing.value!!){
-                coordinates.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
+                coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
         }
 
