@@ -12,6 +12,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewPropertyAnimator
+import android.widget.AdapterView
 import android.widget.Toast
 import androidx.core.view.ViewCompat.animate
 import com.example.bitonichallenge2.model.*
@@ -19,10 +20,7 @@ import com.example.bitonichallenge2.model.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.CoroutineScope
@@ -90,6 +88,23 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             Toast.makeText(this@MapsActivity,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
             deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, coordinatesUserMap)
             isDistanceClose = false
+        }
+        spMapStyles.apply {
+            onItemSelectedListener = object : AdapterView.OnItemClickListener, AdapterView.OnItemSelectedListener {
+                override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {}
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    when (position){
+                        0 -> { mMap?.setMapStyle(null) }
+                        1 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight))}
+                        2 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight_brand))}
+                        3 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_muted_blue))}
+                    }
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+
+            }
         }
 
         fabGoToUser.setOnClickListener{

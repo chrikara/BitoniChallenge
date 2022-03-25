@@ -57,14 +57,11 @@ object utils {
         var longRand : Double
         var litres : Int
 
-        var count : Float = 0f
         repeat (INITIAL_FUEL_MARKERS){
             randomLocation.apply {
                 latitude = 0.0
                 longitude = 0.0
             }
-
-
             while(currentlocation.distanceTo(randomLocation)> RADIUS){
                 latRand = Random.nextDouble(currentlocation.latitude-0.004,currentlocation.latitude+0.004)
                 longRand = Random.nextDouble(currentlocation.longitude-0.004,currentlocation.longitude+0.004)
@@ -72,14 +69,9 @@ object utils {
                 randomLocation.longitude = longRand
             }
 
-
-
-            count += currentlocation.distanceTo(randomLocation)
-
             litres = randomLitres()
             mutableFuelList.add(Fuel(LatLng(randomLocation.latitude,randomLocation.longitude), litres, dimensionsOfFuel(litres)))
         }
-        Log.d("Utils","${count/ INITIAL_FUEL_MARKERS}")
 
         return mutableFuelList
     }
