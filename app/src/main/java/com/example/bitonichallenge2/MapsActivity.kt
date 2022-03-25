@@ -1,6 +1,7 @@
 package com.example.bitonichallenge2
 
 import android.content.Intent
+import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -15,6 +16,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
@@ -27,6 +31,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     private var coordinatesUserMap : LatLng = LatLng(0.0,0.0)
 
     private var userMarker : Marker? = null
+
+    private var fuelToCatchIndex = -1
+    private var isDistanceClose = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +65,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
             updateUserLocation(it)
+            userAndFuelDistance(userLocationFromLatLng(it))
         })
         GameService.coordinatesFuel.observe(this,{
             Log.d("MapsActivity2","  ${mMap.toString()}")
@@ -82,6 +90,50 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
 
 
+    }
+
+    private fun userAndFuelDistance(userLocation: Location){
+        CoroutineScope(Dispatchers.Default).launch{
+            if(!isDistanceClose){
+                for(i in coordinatesFuelMap.indices){
+
+                    // Prompts user to catch fuel if he is close to a fuel marker
+                    if (distanceFromUserAndMarker(userLocation, coordinatesFuelMap[i].coords) < MAX_DISTANCE_TO_CATCH_FUEL ){
+                        CoroutineScope(Dispatchers.Main).launch {
+                            btnCatch.isEnabled = true
+                            fuelToCatchIndex = i
+                            isDistanceClose = true
+                        }
+                        break
+                    }
+                }
+
+            } else{
+                // If user walks away from catchable position
+                if(distanceFromUserAndMarker(userLocation,coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
+                    CoroutineScope(Dispatchers.Main).launch {
+                        btnCatch.isEnabled = false
+                        fuelToCatchIndex = -1
+                        isDistanceClose = false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun distanceFromUserAndMarker(currentLocation : Location, fuelLocation: LatLng) : Float{
+        return currentLocation.distanceTo(Location("coords").apply {
+            latitude = fuelLocation.latitude
+            longitude = fuelLocation.longitude
+        })
+    }
+
+    private fun userLocationFromLatLng(latLng: LatLng) : Location {
+        val location = Location("user").apply {
+            latitude = latLng.latitude
+            longitude = latLng.longitude
+        }
+        return location
     }
     private fun updateFuelMapLocation(listOfFuels : MutableList<Fuel>){
 

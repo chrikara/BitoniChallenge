@@ -76,8 +76,8 @@ class GameService: LifecycleService() {
         if(isGame){
             if(utils.hasPermissions(this)){
                 val request = LocationRequest.create().apply {
-                    interval = 5000L
-                    fastestInterval = 2000L
+                    interval = MY_INTERVAL
+                    fastestInterval = MY_MAXIMUM_INTERVAL
                     priority = LocationRequest.PRIORITY_HIGH_ACCURACY
                 }
                 fusedLocationProviderClient.requestLocationUpdates(
