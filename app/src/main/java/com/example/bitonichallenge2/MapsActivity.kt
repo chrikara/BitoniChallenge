@@ -5,14 +5,12 @@ import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
@@ -52,7 +50,11 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             mMap = it
             updateFuelMapLocation(coordinatesFuelMap)
             updateUserLocation(coordinatesUserMap)
-            alphanessWhenRotate()
+
+            GameService.isGameOngoing.value?.let { isGameOnGoing ->
+                val isPaused = !isGameOnGoing
+                alphaMapWhenPaused(isPaused)
+            }
         }
 
 
@@ -95,7 +97,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             coordinatesUserMap = it
             updateUserLocation(it)
             updateProgressBarAndMap()
-
             userAndFuelDistance(it)
 
         })
@@ -107,20 +108,22 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
     private fun updateUiButtons(isGamePlaying : Boolean){
 
-
+        // Game is played
         if(isGamePlaying){
             btnStartGame.visibility = View.GONE
             btnPauseGame.visibility = View.VISIBLE
             btnCatch.visibility = View.VISIBLE
+            alphaMapWhenPaused(false)
 
-
+            // Game is paused
         }else if (!isGamePlaying && GameService.isPaused.value==true){
             btnStartGame.text = "Resume"
             btnStartGame.visibility = View.VISIBLE
             btnPauseGame.visibility = View.GONE
             btnCatch.visibility = View.GONE
-            mapFragment.requireView().alpha = 0.6f
+            alphaMapWhenPaused(true)
 
+            // Game is stopped
 
 
 
@@ -135,7 +138,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
         else {
             progressBar.visibility = View.GONE
-            mapFragment.view?.alpha = 1f
+            alphaMapWhenPaused(false)
         }
     }
 
@@ -199,16 +202,19 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         }
     }
-    private fun alphanessWhenRotate(){
-        GameService.isGameOngoing.value?.let{
-            if(it){
-                mapFragment.requireView().alpha = 1f
-            }else if(it && GameService.isPaused.value!!){
-                mapFragment.requireView().alpha = 0.6f
-            }
-        }
-    }
 
+
+    private fun alphaMapWhenPaused(paused: Boolean){
+
+        if(paused){
+            mapFragment.view?.alpha = 0.6f
+            mMap?.uiSettings?.setAllGesturesEnabled(false)
+        }else{
+            mapFragment.view?.alpha = 1f
+            mMap?.uiSettings?.setAllGesturesEnabled(true)
+        }
+
+    }
 
 
 
