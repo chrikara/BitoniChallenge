@@ -57,8 +57,7 @@ class GameService: LifecycleService() {
                     if(isFirstGame){
                         startForegroundService()
                     }else{
-                        isGameOngoing.postValue(true)
-                        isPaused.postValue(false)
+                        resumeService()
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
@@ -78,6 +77,11 @@ class GameService: LifecycleService() {
         isGameOngoing.postValue(false)
         coordinatesFuel.postValue(mutableListOf())
         coordinatesUser.postValue(LatLng(0.0,0.0))
+    }
+
+    private fun resumeService(){
+        isPaused.postValue(false)
+        isGameOngoing.postValue(true)
     }
 
     private fun pauseService(){
@@ -118,7 +122,6 @@ class GameService: LifecycleService() {
 
             userLastLocation = locationResult.lastLocation
             if(isGameOngoing.value!!){
-                Log.d("GameService","${locationResult.lastLocation.latitude}")
                 coordinatesUser.postValue(LatLng(locationResult.lastLocation.latitude,locationResult.lastLocation.longitude))
             }
             if(isFirstGame && coordinatesUser.value!=null){

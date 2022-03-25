@@ -2,4 +2,12 @@
     <string name="app_name">BitoniChallenge</string>
     <string name="google_maps_key">AIzaSyDcqg-tl6B6Vfjl6OOnHVeU20MpFuMqv94</string>
     <string name="title_activity_maps">Map</string>
+    <string-array name="Styles">
+
+        <item>Normal</item>
+        <item>Midnight</item>
+        <item>Midnight Brand</item>
+        <item>Muted Blue</item>
+    </string-array>
+
 </resources>

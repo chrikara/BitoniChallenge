@@ -1,6 +1,5 @@
 package com.example.bitonichallenge2
 
-import android.content.DialogInterface
 import android.content.Intent
 import android.location.Location
 import android.os.Build
@@ -16,6 +15,7 @@ import com.example.bitonichallenge2.model.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
@@ -41,6 +42,8 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     private var fuelToCatchIndex = -1
     private var isDistanceClose = false
+    private var isFirstgame = true
+
 
     private var menu: Menu? = null
 
@@ -56,7 +59,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             mMap = it
             updateFuelMapLocation(coordinatesFuelMap)
             updateUserLocation(coordinatesUserMap)
-
+            cameraToUser()
             GameService.isPaused.value?.let{ isPaused ->
                 alphaMapWhenPaused(isPaused)
             }
@@ -64,6 +67,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
 
         subscribeToObservers()
+
 
         btnStartGame.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
@@ -73,11 +77,22 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
 
         btnCatch.setOnClickListener{
-                Toast.makeText(this,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
-                deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
-                btnCatch.isEnabled = false
-                isDistanceClose = false
+
+                Toast.makeText(this@MapsActivity,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
+
+            deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, GameService.coordinatesUser.value!!)
+            btnCatch.isEnabled = false
+            isDistanceClose = false
         }
+
+        fabGoToUser.setOnClickListener{
+            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUserMap, 18f))
+        }
+    }
+
+    private fun cameraToUser(){
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(coordinatesUserMap, 18f))
+
     }
 
     // Clears whole map, updates map with user marker, all fuels except from the removed fuel
@@ -96,15 +111,21 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         })
 
         GameService.coordinatesUser.observe(this,{
-            coordinatesUserMap = it
-            updateUserLocation(it)
-            updateProgressBarAndMap()
-            userAndFuelDistance(it)
+            if(isGameOnGoingMap){
+                coordinatesUserMap = it
+                updateUserLocation(it)
+                updateProgressBarAndMap()
+                userAndFuelDistance(it)
+            }
+
 
         })
 
         GameService.coordinatesFuel.observe(this,{
             coordinatesFuelMap = it
+
+            for(i in coordinatesFuelMap.indices){
+            }
             updateFuelMapLocation(coordinatesFuelMap)
         })
     }
@@ -122,6 +143,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 btnCatch.visibility = View.VISIBLE
                 menu?.getItem(0)?.isVisible = true
                 alphaMapWhenPaused(false)
+                fabGoToUser.visibility = View.VISIBLE
             }
             PLAYER_PAUSED ->{
                 btnStartGame.text = "Resume"
@@ -135,29 +157,38 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 btnStartGame.visibility = View.VISIBLE
                 btnPauseGame.visibility = View.GONE
                 btnCatch.visibility = View.GONE
+                fabGoToUser.visibility = View.GONE
+                isFirstgame = true
+                isDistanceClose = false
+                fuelToCatchIndex = -1
                 menu?.getItem(0)?.isVisible = false
                 mMap?.clear()
             }
         }
     }
     private fun updateProgressBarAndMap(){
-        // Else block is executed when GameService.isFirstGame gets false, that's when all random fuels have been generated
+        // If-block is executed until all random fuels are finished generating on the map
         if(GameService.isGameOngoing.value!! && GameService.isFirstGame)
         {
             progressBar.visibility = View.VISIBLE
             mapFragment.view?.alpha = 0.1f
         }
-        else {
+
+        // Else-block is executed ONCE when GameService.isFirstGame gets false, that's when all random fuels have been generated
+        else if(isFirstgame && !GameService.isFirstGame ) {
+            cameraToUser()
             progressBar.visibility = View.GONE
             alphaMapWhenPaused(false)
+            isFirstgame = false
         }
     }
 
     private fun updateUserLocation(userLatLng: LatLng){
-
-        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f))
         userMarker?.remove()
-        userMarker = mMap?.addMarker(MarkerOptions().position(userLatLng).title("It's me"))
+        userMarker = mMap?.addMarker(MarkerOptions()
+                .position(userLatLng)
+                .title("It's me")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
 
     }
 
@@ -176,16 +207,17 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         break
                     }
                 }
-
             } else{
-                // If user walks away from catchable position
-                if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
-                    CoroutineScope(Dispatchers.Main).launch {
-                        btnCatch.isEnabled = false
-                        fuelToCatchIndex = -1
-                        isDistanceClose = false
+                    // If user walks away from catchable position
+                    if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
+                        CoroutineScope(Dispatchers.Main).launch {
+                            btnCatch.isEnabled = false
+                            fuelToCatchIndex = -1
+                            isDistanceClose = false
+                        }
                     }
-                }
+
+
             }
         }
     }
@@ -208,7 +240,11 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         // This won't fire in screen rotation from observer because mMap is null. It will fire from observer when we start our service.
         // So, we put this on mMap async (onCreate) and it fires from there when we rotate
         for (fuel in listOfFuels){
-            mMap?.addMarker(MarkerOptions().position(fuel.coords).title("It's me"))
+            mMap?.addMarker(MarkerOptions()
+                    .position(fuel.coords)
+                    .title(fuel.litres.toString())
+                    .icon(utils.bitmapDescriptorFromVector(this,R.drawable.ic_baseline_local_gas_station_24,fuel.dimensions)))
+
 
         }
     }
@@ -240,7 +276,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
             return super.onPrepareOptionsMenu(menu)
     }
-    private fun showCancelTrackingDialog() {
+    private fun showCancelGameDialog() {
         val dialog = MaterialAlertDialogBuilder(this,R.style.AlertDialogTheme)
                 .setTitle("Cancel the Run?")
                 .setMessage("Are you sure to cancel the current run and delete all its data?")
@@ -265,18 +301,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun showCancelGameDialog(){
-        val dialog = MaterialAlertDialogBuilder(this)
-                .setTitle("Cancel Game")
-                .setMessage("Do you want to cancel this game?")
-                .setPositiveButton("Yes") { _: DialogInterface, i: Int ->
-                    sendCommandToService(ACTION_STOP_SERVICE)
 
-                }
-                .setNegativeButton("No") { dialogInterface: DialogInterface, i: Int -> dialogInterface.cancel()}
-                .create()
-        dialog.show()
-    }
     private fun sendCommandToService(action:String){
         Intent(this, GameService::class.java).also {
             it.action = action
