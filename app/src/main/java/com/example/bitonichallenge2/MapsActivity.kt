@@ -200,16 +200,15 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                         break
                     }
                 }
-            } else{
-                    // If user walks away from catchable position
-                    if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> DISTANCE_FUEL_IS_CATCHABLE){
-                        CoroutineScope(Dispatchers.Main).launch {
-                            btnCatch.isEnabled = false
-                            animateCatchButton(false)
-                            fuelToCatchIndex = -1
-                            isDistanceClose = false
-                        }
-                    }
+                return@launch
+            }
+            if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> DISTANCE_FUEL_IS_CATCHABLE){
+                CoroutineScope(Dispatchers.Main).launch {
+                    btnCatch.isEnabled = false
+                    animateCatchButton(false)
+                    fuelToCatchIndex = -1
+                    isDistanceClose = false
+                }
             }
         }
     }
