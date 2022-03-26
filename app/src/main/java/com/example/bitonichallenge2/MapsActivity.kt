@@ -1,8 +1,7 @@
 package com.example.bitonichallenge2
 
-import android.animation.Animator
-import android.animation.TimeInterpolator
 import android.content.Intent
+import android.graphics.Color
 import android.location.Location
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -11,10 +10,8 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewPropertyAnimator
 import android.widget.AdapterView
 import android.widget.Toast
-import androidx.core.view.ViewCompat.animate
 import com.example.bitonichallenge2.model.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -25,11 +22,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
-import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
@@ -47,7 +42,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private var isDistanceClose = false
     private var isFirstgame = true
 
-    private var animationCatch : ViewPropertyAnimator? = null
     private var menu: Menu? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,21 +50,21 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         requestPermissions()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+                .findFragmentById(R.id.map) as SupportMapFragment
 
-        mapFragment.getMapAsync{
+        mapFragment.getMapAsync {
             mMap = it
             updateFuelMapLocation(coordinatesFuelMap)
             updateUserLocation(coordinatesUserMap)
             cameraToUser()
-            GameService.isPaused.value?.let{ isPaused ->
+            GameService.isPaused.value?.let { isPaused ->
                 alphaMapWhenPaused(isPaused)
             }
 
         }
 
         subscribeToObservers()
-
+        spinnerAddStyles()
 
         btnStartGame.setOnClickListener {
             sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
@@ -79,35 +73,18 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             sendCommandToService(ACTION_PAUSE_SERVICE)
         }
 
-        btnCatch.setOnClickListener{
+        btnCatch.setOnClickListener {
+            Toast.makeText(this@MapsActivity, "Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
+
             btnCatch.isEnabled = false
-            animationCatch?.cancel()
             animateCatchButton(false)
 
-
-            Toast.makeText(this@MapsActivity,"Caught ${coordinatesFuelMap[fuelToCatchIndex].litres} litres!", Toast.LENGTH_SHORT).show()
             deleteMarkerFromListAndUpdateMap(fuelToCatchIndex, coordinatesUserMap)
             isDistanceClose = false
         }
-        spMapStyles.apply {
-            onItemSelectedListener = object : AdapterView.OnItemClickListener, AdapterView.OnItemSelectedListener {
-                override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {}
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    when (position){
-                        0 -> { mMap?.setMapStyle(null) }
-                        1 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight))}
-                        2 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight_brand))}
-                        3 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_muted_blue))}
-                    }
-                }
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                    TODO("Not yet implemented")
-                }
 
-            }
-        }
 
-        fabGoToUser.setOnClickListener{
+        fabGoToUser.setOnClickListener {
             cameraToUser()
         }
     }
@@ -117,7 +94,6 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
     }
 
-    // Clears whole map, updates map with user marker, all fuels except from the removed fuel
     private fun deleteMarkerFromListAndUpdateMap(index:Int,currentLatLng: LatLng) {
         coordinatesFuelMap.removeAt(index)
         mMap?.clear()
@@ -134,14 +110,11 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
         GameService.coordinatesUser.observe(this,{
             coordinatesUserMap = it
-            Log.d("MapsActivity","${coordinatesUserMap} ")
-            if(isGameOnGoingMap){
-                updateUserLocation(it)
-                updateProgressBarAndMap()
-                userAndFuelDistance(it)
-            }
+            if(!isGameOnGoingMap) return@observe
 
-
+            updateUserLocation(it)
+            updateProgressBarAndMap()
+            userAndFuelDistance(it)
 
         })
 
@@ -186,14 +159,12 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 menu?.getItem(0)?.isVisible = false
                 mMap?.clear()
                 updateUserLocation(coordinatesUserMap)
-
-
             }
         }
     }
     private fun updateProgressBarAndMap(){
         // If-block is executed until all random fuels are finished generating on the map
-        if(GameService.isGameOngoing.value!! && GameService.isFirstGame)
+        if(isGameOnGoingMap && GameService.isFirstGame)
         {
             progressBar.visibility = View.VISIBLE
             mapFragment.view?.alpha = 0.1f
@@ -219,13 +190,10 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         CoroutineScope(Dispatchers.Default).launch{
             if(!isDistanceClose){
                 for(i in coordinatesFuelMap.indices){
-
-                    // Prompts user to catch fuel if he is close to a fuel marker
-                    if (distanceFromUserAndMarker(locationConverter(latLng), coordinatesFuelMap[i].coords) < MAX_DISTANCE_TO_CATCH_FUEL ){
+                    if (distanceFromUserAndMarker(locationConverter(latLng), coordinatesFuelMap[i].coords) < DISTANCE_FUEL_IS_CATCHABLE ){
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = true
                             animateCatchButton(true)
-                            Log.d("MapsActivity","i ${i}")
                             fuelToCatchIndex = i
                             isDistanceClose = true
                         }
@@ -234,7 +202,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 }
             } else{
                     // If user walks away from catchable position
-                    if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> MAX_DISTANCE_TO_CATCH_FUEL){
+                    if(distanceFromUserAndMarker(locationConverter(latLng),coordinatesFuelMap[fuelToCatchIndex].coords)> DISTANCE_FUEL_IS_CATCHABLE){
                         CoroutineScope(Dispatchers.Main).launch {
                             btnCatch.isEnabled = false
                             animateCatchButton(false)
@@ -266,7 +234,7 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
             mMap?.addMarker(MarkerOptions()
                     .position(fuel.coords)
                     .title(fuel.litres.toString())
-                    .icon(utils.bitmapDescriptorFromVector(this,R.drawable.ic_baseline_local_gas_station_24,fuel.dimensions)))
+                    .icon(utils.bitmapDescriptorFromVector(this,fuel.drawable,fuel.dimensions)))
             Log.d("MapsActivity","${fuel.coords}")
         }
     }
@@ -275,15 +243,17 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         CoroutineScope(Dispatchers.Main).launch {
             if (isCatchable) {
                 btnCatch.apply {
+                    btnCatch.isEnabled = true
                     strokeWidth = 7
                     animate().apply {
-                        rotationYBy(360f)
+                        rotationYBy(ROTATION_BUTTON)
                         duration = ANIMATION_DURATION
                     }
-
                 }
+                return@launch
             }
-            else btnCatch.strokeWidth = 0
+            btnCatch.isEnabled = false
+            btnCatch.strokeWidth = 0
         }
         }
 
@@ -299,6 +269,27 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
 
     }
+
+    private fun spinnerAddStyles(){
+        spMapStyles.apply {
+            onItemSelectedListener = object : AdapterView.OnItemClickListener, AdapterView.OnItemSelectedListener {
+                override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {}
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    when (position){
+                        0 -> { mMap?.setMapStyle(null) }
+                        1 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight))}
+                        2 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_midnight_brand))}
+                        3 -> { mMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivity,R.raw.map_style_muted_blue))}
+                    }
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+
+            }
+        }
+    }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.toolbar_maps_activity,menu)

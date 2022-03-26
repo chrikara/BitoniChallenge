@@ -5,6 +5,7 @@ import com.google.android.gms.maps.model.LatLng
 data class Fuel(
         val coords : LatLng,
         val litres : Int,
-        val dimensions : Int
+        val dimensions : Int,
+        val drawable : Int
 ) {
 }

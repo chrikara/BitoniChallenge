@@ -49,6 +49,7 @@
             android:name="com.google.android.gms.version"/>
 
         <service android:name=".GameService" android:foregroundServiceType="location"/>
+
     </application>
 
 </manifest>

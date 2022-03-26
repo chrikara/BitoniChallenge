@@ -56,9 +56,9 @@ class GameService: LifecycleService() {
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if(isFirstGame){
                         startForegroundService()
-                    }else{
-                        resumeService()
+                        return@let
                     }
+                    resumeService()
                 }
                 ACTION_PAUSE_SERVICE -> {
                     pauseService()
@@ -136,9 +136,8 @@ class GameService: LifecycleService() {
         isGameOngoing.postValue(true)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            createNotificationChannel(notificationManager)
-        }
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)  createNotificationChannel(notificationManager)
+
 
         val notificationBuilder= NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setAutoCancel(false) // User can't cancel notification
@@ -163,9 +162,10 @@ class GameService: LifecycleService() {
     )
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(notificationManager: NotificationManager){
-        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID,
-            NOTIFICATION_CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_LOW
+        val channel = NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                NOTIFICATION_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
         )
 
         notificationManager.createNotificationChannel(channel)
