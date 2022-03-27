@@ -4,6 +4,9 @@ import com.google.android.gms.maps.model.LatLng
 
 const val REQUEST_CODE_PERMISSIONS = 0
 
+const val SHARED_START = "SHARED_START"
+const val SHARED_START_BOOLEAN = "SHARED_START_BOOLEAN"
+
 const val ACTION_START_OR_RESUME_SERVICE = "ACTION_START_OR_RESUME_SERVICE"
 const val ACTION_PAUSE_SERVICE = "ACTION_PAUSE_SERVICE"
 const val ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
@@ -36,6 +39,6 @@ const val LITRES_MEDIUM = 15
 const val LITRES_LARGE = 20
 const val LITRES_VERY_LARGE = 40
 
-const val PLAYER_PLAYING = "Playing"
-const val PLAYER_PAUSED = "Paused"
-const val PLAYER_STOPPED = "Stopped"
+const val USER_PLAYING = "Playing"
+const val USER_PAUSED = "Paused"
+const val USER_STOPPED = "Stopped"

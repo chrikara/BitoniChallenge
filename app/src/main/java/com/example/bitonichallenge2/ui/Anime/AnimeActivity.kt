@@ -1,4 +1,4 @@
-package com.example.bitonichallenge2
+package com.example.bitonichallenge2.ui.Anime
 
 import android.content.DialogInterface
 import android.content.Intent
@@ -8,6 +8,11 @@ import android.os.Bundle
 import android.view.View
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.ViewModelProvider
+import com.example.bitonichallenge2.R
+import com.example.bitonichallenge2.model.SHARED_START
+import com.example.bitonichallenge2.model.SHARED_START_BOOLEAN
+import com.example.bitonichallenge2.ui.Maps.MapsActivity
 import kotlinx.android.synthetic.main.activity_anime.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,21 +21,21 @@ import kotlinx.coroutines.launch
 
 class AnimeActivity : AppCompatActivity() {
     lateinit var sharedPrefs : SharedPreferences
-
+    lateinit var viewModel : AnimeViewModel
+    var hasAlreadyStartedGame : Boolean = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_anime)
 
-
-
-        sharedPrefs = getSharedPreferences("SHARED_START", MODE_PRIVATE)
-        val hasAlreadyStartedGame = sharedPrefs.getBoolean("SHARED_START",false)
+        sharedPrefs = getSharedPreferences(SHARED_START, MODE_PRIVATE)
+        hasAlreadyStartedGame = sharedPrefs.getBoolean(SHARED_START_BOOLEAN,false)
+        viewModel = ViewModelProvider(this).get(AnimeViewModel::class.java)
 
 
         CoroutineScope(Dispatchers.Main).launch {
-            fuelAnimation()
-            showViewsAfterAnimation()
+            if(!viewModel.hasAnimationEnded)  fuelAnimation()
 
+            showViewsAfterAnimation()
             btnContinue.isEnabled = hasAlreadyStartedGame
         }
 
@@ -47,10 +52,12 @@ class AnimeActivity : AppCompatActivity() {
 
 
     private suspend fun fuelAnimation(){
-        ivBitoniAnime.startAnimation(AnimationUtils.loadAnimation(this,R.anim.splash_in))
+        ivBitoniAnime.startAnimation(AnimationUtils.loadAnimation(this, R.anim.splash_in))
         delay(2000L)
-        ivBitoniAnime.startAnimation(AnimationUtils.loadAnimation(this@AnimeActivity,R.anim.splash_out))
+        ivBitoniAnime.startAnimation(AnimationUtils.loadAnimation(this, R.anim.splash_out))
         delay(2000L)
+        viewModel.hasAnimationEnded=true
+
     }
 
     private fun showViewsAfterAnimation(){
@@ -61,8 +68,7 @@ class AnimeActivity : AppCompatActivity() {
     }
 
     private fun startNewGame(){
-        sharedPrefs.edit().putBoolean("SHARED_START", true).apply()
-
+        sharedPrefs.edit().putBoolean(SHARED_START_BOOLEAN, true).apply()
         Intent(this, MapsActivity::class.java).also { startActivity(it) }
         finish()
     }

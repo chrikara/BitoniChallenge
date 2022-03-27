@@ -1,4 +1,4 @@
-package com.example.bitonichallenge2
+package com.example.bitonichallenge2.services
 
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
@@ -14,6 +14,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
+import com.example.bitonichallenge2.ui.Maps.MapsActivity
+import com.example.bitonichallenge2.R
 import com.example.bitonichallenge2.model.*
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.LatLng
@@ -48,7 +50,7 @@ class GameService: LifecycleService() {
     // See https://www.youtube.com/watch?v=JpVBPKf2mIU&list=PLQkwcJG4YTCQ6emtoqSZS2FVwZR9FT3BV
     // why we need Foreground Service
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("GameService","${isFirstGame}")
+        Log.d("GameService","$isFirstGame")
 
         intent?.let {
 
@@ -89,7 +91,7 @@ class GameService: LifecycleService() {
         isGameOngoing.postValue(false)
     }
     private fun killService(){
-        isFirstGame=true
+        isFirstGame =true
         isPaused.postValue(false)
         isGameOngoing.postValue(false)
         coordinatesFuel.postValue(mutableListOf())
@@ -126,7 +128,7 @@ class GameService: LifecycleService() {
             }
             if(isFirstGame && coordinatesUser.value!=null){
                 coordinatesFuel.postValue((utils.generateFuelListWithin120mRad(locationResult.lastLocation)))
-                isFirstGame=false
+                isFirstGame =false
             }
         }
 
@@ -154,7 +156,7 @@ class GameService: LifecycleService() {
     private fun getMapsActivityPendingIntent() = PendingIntent.getActivity(
         this,
         0,
-        Intent(this,MapsActivity::class.java).also {
+        Intent(this, MapsActivity::class.java).also {
             it.action = ACTION_SHOW_MAPS_ACTIVITY
         },
         PendingIntent.FLAG_UPDATE_CURRENT // When we launch pending intent and it already exists

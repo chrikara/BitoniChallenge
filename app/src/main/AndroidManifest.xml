@@ -33,22 +33,21 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".MapsActivity"
+            android:name=".ui.Maps.MapsActivity"
             android:label="@string/title_activity_maps" android:launchMode="singleTask">
+        </activity>
+        <activity android:name=".ui.Anime.AnimeActivity" android:theme="@style/Theme.BitoniChallenge2NoAction">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AnimeActivity">
-
-        </activity>
 
         <meta-data
             android:name="com.google.android.gms.version"/>
 
-        <service android:name=".GameService" android:foregroundServiceType="location"/>
+        <service android:name=".services.GameService" android:foregroundServiceType="location"/>
 
     </application>
 
