@@ -1,6 +1,5 @@
-package com.example.bitonichallenge2.ui.Anime
+package com.example.bitonichallenge2.ui.anime
 
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class AnimeViewModel: ViewModel() {

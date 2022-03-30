@@ -14,7 +14,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
-import com.example.bitonichallenge2.ui.Maps.MapsActivity
+import com.example.bitonichallenge2.ui.maps.MapsActivity
 import com.example.bitonichallenge2.R
 import com.example.bitonichallenge2.model.*
 import com.google.android.gms.location.*

@@ -1,4 +1,4 @@
-package com.example.bitonichallenge2.ui.Maps
+package com.example.bitonichallenge2.ui.maps
 
 import android.content.Intent
 import android.location.Location
@@ -370,6 +370,11 @@ class MapsActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         } else{
             requestPermissions()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopGame()
     }
 
 }

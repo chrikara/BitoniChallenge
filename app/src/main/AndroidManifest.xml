@@ -33,10 +33,10 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".ui.Maps.MapsActivity"
+            android:name=".ui.maps.MapsActivity"
             android:label="@string/title_activity_maps" android:launchMode="singleTask">
         </activity>
-        <activity android:name=".ui.Anime.AnimeActivity" android:theme="@style/Theme.BitoniChallenge2NoAction">
+        <activity android:name=".ui.anime.AnimeActivity" android:theme="@style/Theme.BitoniChallenge2NoAction">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

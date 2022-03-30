@@ -1,4 +1,4 @@
-package com.example.bitonichallenge2.ui.Anime
+package com.example.bitonichallenge2.ui.anime
 
 import android.content.DialogInterface
 import android.content.Intent
@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.bitonichallenge2.R
 import com.example.bitonichallenge2.model.SHARED_START
 import com.example.bitonichallenge2.model.SHARED_START_BOOLEAN
-import com.example.bitonichallenge2.ui.Maps.MapsActivity
+import com.example.bitonichallenge2.ui.maps.MapsActivity
 import kotlinx.android.synthetic.main.activity_anime.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +33,8 @@ class AnimeActivity : AppCompatActivity() {
 
 
         CoroutineScope(Dispatchers.Main).launch {
-            if(!viewModel.hasAnimationEnded)  fuelAnimation()
+            if(!viewModel.hasAnimationEnded)
+                fuelAnimation()
 
             showViewsAfterAnimation()
             btnContinue.isEnabled = hasAlreadyStartedGame
@@ -47,7 +48,6 @@ class AnimeActivity : AppCompatActivity() {
         btnContinue.setOnClickListener {
             continueGame()
         }
-
     }
 
 
